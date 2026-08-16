@@ -1,0 +1,88 @@
+# =============================================================================
+# ConflictEW T-GNN — 可复现研究配置
+# -----------------------------------------------------------------------------
+# 所有超参数、随机种子、路径与数据口径集中于此文件，代码中不出现"魔法数字"。
+# 论文 Methods / Reproducibility Statement 直接引用本文件与 artifacts/ 产物。
+# =============================================================================
+
+project:
+  name: conflict-ew-kalman
+  version: "0.2.0"
+
+# --- 可复现性：全链路固定种子 ------------------------------------------------
+reproducibility:
+  seed: 20240101            # Python random / numpy / xgboost 统一种子
+  force_seed: 20240101      # 前端 D3 力导向图布局种子（与 dashboard_v3.html 对齐）
+
+# --- 数据口径 -----------------------------------------------------------------
+data:
+  source_dir: .
+  full_file: db_data.json          # 全字段格式（主数据源）
+  compact_file: cdata.json         # 紧凑格式（前端 dashboard 使用）
+  snapshot_date: "2024-06-20"      # 数据快照日期
+  sipri_version: "SIPRI Milex 1990-2024 (constant 2022 USD, placeholder — verify before submission)"
+  cow_version: "Correlates of War v5.x (placeholder — cite exact version)"
+
+# --- Kalman 局部线性趋势滤波（对应论文 §3.1）----------------------------------
+kalman:
+  log_transform: true
+  eps: 1e-6                 # log 下界，避免 log(0)
+  init_p: 1e6               # 初始状态方差（扩散先验）
+  grid_q_eta: [1e-4, 3e-4, 1e-3, 3e-3, 1e-2]     # σ²η 网格（水平噪声）
+  grid_q_zeta: [1e-7, 1e-6, 1e-5, 1e-4, 1e-3]     # σ²ζ 网格（斜率噪声）
+  grid_r_eps: [1e-3, 3e-3, 1e-2, 3e-2, 1e-1]      # σ²ε 网格（观测噪声）
+  anomaly_sigma: 2.0        # ±2σ 异常阈值
+
+# --- 多因子加权（对应论文 §3.2，用于展示层；训练层见 model 节）-----------------
+factors:
+  weights:
+    military_anomaly: 0.25
+    arms_race: 0.20
+    economic_pressure: 0.15
+    political_instability: 0.15
+    territorial_dispute: 0.15
+    alliance_tension: 0.10
+
+# --- 模型训练（对应论文 §3.2 / §4）---------------------------------------------
+model:
+  name: xgboost
+  features: [e_star, log_level, growth, volatility, slope, neighbor_e]
+  test_start: 2015          # 严格 out-of-sample 起始年（预注册口径）
+  n_splits: 5               # expanding-window 折数
+  window_years: 2           # 每折测试窗长度（年）
+  params:
+    max_depth: 3
+    learning_rate: 0.05
+    n_estimators: 200
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+    min_child_weight: 1
+  rare_event:
+    enabled: true
+    pos_weight: 5.0         # scale_pos_weight（稀有事件加权 BCE）
+    prior_correction: true  # King-Zeng (2001) 先验校正（应用于 logistic 基准）
+    prior_tau: 0.5          # 总体真实事件发生率 τ（用于先验校正；投稿前以领域先验或文献校准）
+  baselines: [logistic_rare_event, kalman_only]   # 稀有事件校正逻辑回归 / 仅 e* 单特征（消融）
+
+# --- 评估（对应论文 §4）---------------------------------------------------------
+eval:
+  n_bootstrap: 1000
+  confidence: 0.95
+  brier_bins: 10
+  alpha_fdr: 0.05           # Benjamini-Hochberg FDR 水平
+
+# --- 出图（期刊投稿级矢量图）----------------------------------------------------
+figures:
+  format: pdf               # pdf / svg
+  dpi: 300
+  width_mm: 180             # 期刊双栏宽度约 180 mm
+  palette: RdYlBu
+  colorblind_safe: true
+  font: Arial
+
+# --- 产物路径 ------------------------------------------------------------------
+paths:
+  artifacts: artifacts
+  figures: artifacts/figures
+  results: artifacts/results
