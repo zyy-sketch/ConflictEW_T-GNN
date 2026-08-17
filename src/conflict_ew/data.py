@@ -17,24 +17,55 @@ def _sha256(path: Path) -> str:
 
 
 def load_raw(cfg: dict[str, Any]) -> dict[str, Any]:
-    """Load the full-field dataset (``db_data.json``) into clean structures."""
+    """Load the dataset into clean structures.
+
+    ``config.data.source`` selects the data origin:
+      * ``synthetic`` — the hard-coded ``db_data.json`` (demonstration only).
+      * ``real``      — cached real World Bank WDI extract (``data/raw_real.json``);
+        if the cache is missing it is fetched automatically by ``data_fetch``.
+    """
     base = Path(cfg["data"]["source_dir"])
-    full = base / cfg["data"]["full_file"]
-    with open(full, encoding="utf-8") as f:
-        d = json.load(f)
+    source = str(cfg["data"].get("source", "synthetic")).lower()
+
+    if source == "real":
+        real_path = base / cfg["data"]["real_file"]
+        if not real_path.exists():
+            print(f"[data] cache {real_path} missing -> fetching real data automatically")
+            from . import data_fetch
+
+            ds = data_fetch.fetch_real_dataset(
+                db_path=base / cfg["data"]["full_file"],
+                year_min=int(cfg["data"].get("year_min", 1990)),
+                year_max=int(cfg["data"].get("year_max", 2024)),
+                indicators=cfg["data"].get("wb_indicators", None),
+            )
+            data_fetch.save_real_dataset(ds, real_path)
+        full = real_path
+        with open(full, encoding="utf-8") as f:
+            d = json.load(f)
+        spending_src = d["military_spending"]
+        economic_src = d.get("economic", {})
+    else:
+        full = base / cfg["data"]["full_file"]
+        with open(full, encoding="utf-8") as f:
+            d = json.load(f)
+        spending_src = d["military_spending"]
+        economic_src = {}
 
     countries = pd.DataFrame(d["countries"])
-    spending = {code: pd.DataFrame(rows) for code, rows in d["military_spending"].items()}
+    spending = {code: pd.DataFrame(rows) for code, rows in spending_src.items()}
+    economic = {code: pd.DataFrame(rows) for code, rows in economic_src.items()}
     relations = pd.DataFrame(d["relations"])
     conflicts = pd.DataFrame(d["conflicts"])
-    factor_scores = dict(d["factor_scores"])
-    alerts = list(d["alerts"])
-    settings = dict(d["settings"])
+    factor_scores = dict(d.get("factor_scores", {}))
+    alerts = list(d.get("alerts", []))
+    settings = dict(d.get("settings", {}))
     tgnn = {code: pd.DataFrame(rows) for code, rows in d.get("tgnn_signals", {}).items()}
 
     return {
         "countries": countries,
         "spending": spending,
+        "economic": economic,
         "relations": relations,
         "conflicts": conflicts,
         "factor_scores": factor_scores,
@@ -43,6 +74,7 @@ def load_raw(cfg: dict[str, Any]) -> dict[str, Any]:
         "tgnn": tgnn,
         "source_path": str(full),
         "source_sha256": _sha256(full),
+        "data_source": source,
     }
 
 
@@ -76,6 +108,7 @@ def write_manifest(raw: dict[str, Any], cfg: dict[str, Any], panel: pd.DataFrame
     countries = raw["countries"]
     meta = {
         "source_file": raw["source_path"],
+        "data_source": raw.get("data_source", "synthetic"),
         "source_sha256": raw["source_sha256"],
         "snapshot_date": cfg["data"]["snapshot_date"],
         "sipri_note": cfg["data"]["sipri_version"],

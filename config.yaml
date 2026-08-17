@@ -17,10 +17,20 @@ reproducibility:
 # --- 数据口径 -----------------------------------------------------------------
 data:
   source_dir: .
-  full_file: db_data.json          # 全字段格式（主数据源）
+  source: real                     # synthetic（硬编码 db_data.json）| real（自动抓取 World Bank 真实数据）
+  full_file: db_data.json          # 合成数据主源（仅 source=synthetic 时使用）
+  real_file: data/raw_real.json    # 真实数据缓存（source=real 时使用；缺失时自动抓取）
   compact_file: cdata.json         # 紧凑格式（前端 dashboard 使用）
+  year_min: 1990                   # 真实数据抓取起始年
+  year_max: 2024                   # 真实数据抓取截止年
+  # World Bank WDI 指标映射（data_fetch.py 使用）
+  wb_indicators:
+    military_usd: MS.MIL.XPND.CD      # 军费支出（现价美元），SIPRI 口径
+    gdp_growth: NY.GDP.MKTP.KD.ZG     # GDP 年增长率 (%)
+    inflation: FP.CPI.TOTL.ZG         # 通胀率 (%)
+    unemployment: SL.UEM.TOTL.ZS      # 失业率 (% 劳动力)
   snapshot_date: "2024-06-20"      # 数据快照日期
-  sipri_version: "SIPRI Milex 1990-2024 (constant 2022 USD, placeholder — verify before submission)"
+  sipri_version: "SIPRI Milex via World Bank WDI (MS.MIL.XPND.CD)"
   cow_version: "Correlates of War v5.x (placeholder — cite exact version)"
 
 # --- Kalman 局部线性趋势滤波（对应论文 §3.1）----------------------------------
@@ -46,7 +56,7 @@ factors:
 # --- 模型训练（对应论文 §3.2 / §4）---------------------------------------------
 model:
   name: xgboost
-  features: [e_star, log_level, growth, volatility, slope, neighbor_e]
+  features: [e_star, log_level, growth, volatility, slope, neighbor_e, gdp_growth, inflation, unemployment]
   test_start: 2015          # 严格 out-of-sample 起始年（预注册口径）
   n_splits: 5               # expanding-window 折数
   window_years: 2           # 每折测试窗长度（年）

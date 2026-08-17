@@ -188,3 +188,51 @@ conflict-ew-kalman/
 3. **数据口径**：SIPRI 军费有 current/constant 两种，论文需明确标注（建议 constant 2022 USD），否则跨年比较无效。
 4. **COW 版本**：Correlates of War 有版本号（v5.x），论文需引用具体版本，代码 `cf` 列表需标注来源版本与下载日期。
 5. **伦理声明**：论文 §2.5 提到 self-fulfilling prophecy 风险，建议补 IRB / 伦理审查声明或豁免说明，部分期刊强制要求。
+
+---
+
+## 6. 实施状态（可复现管道已落地并验证）
+
+`src/conflict_ew/` + `scripts/` 已把 P0–P1 全部实现，并在本机端到端跑通、18 项测试通过、可复现性自检 PASS（同种子产物 bit-identical）。初始 commit `9d8d8f5`。
+
+| 计划条款 | 状态 | 实现位置 |
+|----------|------|----------|
+| A1 端到端管道 | ✅ | `pipeline.py` + `scripts/01–06` + `run_all.py` |
+| A2 全链路种子 | ✅ | `config.yaml → reproducibility.seed` + `seed_everything` |
+| A3 参数/数据溯源落盘 | ✅ | `kalman_params.csv` / `xgb_params.json` / `data_manifest.json` + JSONL run-log |
+| A4 git 归档 | ✅ | 初始 commit `9d8d8f5`（投稿前再打 `v1.0-submission` + Zenodo DOI） |
+| B1 DeLong CI / bootstrap CI / Wilson CI / 两模型检验 | ✅ | `eval/metrics.py`（DeLong test + paired bootstrap） |
+| B2 多重比较校正 | ✅ | `benjamini_hochberg` + `stage_eval` 应用 FDR |
+| B3 blocked temporal CV | ✅ | `models/xgb.py::make_folds`（expanding-window，测试集严格 ≥2015） |
+| B5 稀有事件处理 | ✅ | XGBoost `scale_pos_weight`；logistic 用 King–Zeng 先验校正 |
+| C1/C2 矢量图 + 色盲安全 | ✅ | `viz/figures.py`（PDF/SVG/PNG，RdYlBu，Arial） |
+| D1/D3 模块化 + 配置驱动 | ✅ | `src/` 包结构 + `config.yaml` 无魔法数字 |
+| E1–E6 测试与自检 | ✅ | `tests/`（18 项）+ `scripts/06_repro_check.py` |
+
+### 数据层更新（2026-08-18）：自动抓取真实军费+经济数据
+
+新增 `data_fetch.py` + `scripts/00_fetch_data.py`：管道默认 `config.data.source: real`，
+通过 World Bank WDI API 自动抓取 40 国真实军费支出（SIPRI 口径 `MS.MIL.XPND.CD`）
+与 3 项宏观经济指标（GDP 增速 / 通胀 / 失业率），缓存到 `data/raw_real.json`；
+若缓存缺失 `load_raw` 自动触发抓取（程序"自己找数据"）。多因子层由 6 特征扩展到
+9 特征（新增 `gdp_growth`/`inflation`/`unemployment`）。pytest 仍 18 passed。
+
+| 计划条款 | 状态 | 实现位置 |
+|----------|------|----------|
+| 数据自动获取（真实军费） | ✅ | `data_fetch.py` + `scripts/00_fetch_data.py` + `config.data.source` |
+| 多因子经济压力层 | ✅（部分） | `features/factors.py` 接入 World Bank 经济指标；Polity/ICOW/ATOP 仍待外部静态数据集 |
+
+### ⚠️ 关键发现（必须写进论文 / 提交前处理）
+
+**用真实军费数据替换合成数据后，多因子 XGBoost 的 AUC 提升到 0.648（DeLong 95% CI [0.434, 0.862]），
+多因子（含经济压力）0.648 显著高于仅 Kalman 残差 0.561**——印证论文"多因子框架带来增量能力"的论点，
+但仍远低于仪表板宣称的 0.83（硬编码假数）。根因仍是**标签稀薄**：策展冲突集仅 17 起与真实军费年份重叠、
+基准率约 1.3%，且政治不稳/领土争端/同盟三类因子尚未接入。**投稿前必须**：① 接入真实 COW 冲突标签 +
+Polity/ICOW/ATOP 协变量；② 或如实报告当前基线水平并降低论文结论强度。
+
+### 尚未落地（P2/P3，需外部资源或人工）
+
+- B4 CausalImpact、VAR(p) 基准、Early Warning Lead Time、Cohen's κ（P2）
+- 真实 LLM Agent 或改写为规则推理层（P3，避免 confabulation）
+- OSF 预注册 + Zenodo DOI（P3）
+- 前端 Vite 模块化（P3，低优先）

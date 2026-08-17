@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>实时冲突预警 — Live Prototype</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--txt:#e6edf3;--mut:#9aa7b4;--accent:#58a6ff;--warn:#f0883e;--good:#3fb950;--bad:#f85149;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 18px 60px}
+header h1{font-size:22px;margin:0 0 4px}
+header .sub{color:var(--mut);font-size:13px}
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;margin-top:16px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card h2{font-size:15px;margin:0 0 10px;color:var(--accent)}
+.stat{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:6px}
+.stat div{font-size:13px;color:var(--mut)}
+.stat b{color:var(--txt);font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:600}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px}
+.hi{background:rgba(248,81,73,.18);color:#ff9d96}
+.lo{background:rgba(63,185,80,.16);color:#7ee787}
+.bars{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.bar{display:flex;align-items:center;gap:8px;font-size:12px}
+.bar .name{width:130px;color:var(--mut);text-align:right}
+.bar .track{flex:1;background:#0d1117;border-radius:4px;height:16px;position:relative;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent)}
+.bar .v{width:54px;text-align:right;font-variant-numeric:tabular-nums}
+#log{height:230px;overflow:auto;font-size:12px;font-family:ui-monospace,monospace;background:#0a0e14;border:1px solid var(--line);border-radius:8px;padding:8px}
+#log div{padding:2px 0;border-bottom:1px solid #1b2230;color:var(--mut)}
+form{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+input{flex:1;min-width:90px;background:#0a0e14;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:6px 8px;font-size:12px}
+button{background:var(--accent);color:#06121f;border:0;border-radius:6px;padding:6px 12px;font-weight:600;cursor:pointer}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--bad);display:inline-block;margin-right:6px}
+.live .dot{background:var(--good);box-shadow:0 0 8px var(--good)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>实时军事冲突预警 — Live Prototype <span class="dot" id="dot"></span></h1>
+  <div class="sub">回放模式（虚拟时钟）· 复用 Kalman+XGBoost+SHAP 管道 · SSE 实时推送 · 概率化输出（非二元裁决）</div>
+</header>
+
+<div class="card" style="margin-top:14px">
+  <h2>模型状态（out-of-sample 2015–2024）</h2>
+  <div class="stat">
+    <div>测试样本 <b id="m_n">—</b></div>
+    <div>AUC <b id="m_auc">—</b></div>
+    <div>95% CI <b id="m_ci">—</b></div>
+    <div>Brier <b id="m_brier">—</b></div>
+    <div>进度 <b id="m_prog">—</b></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>实时风险流（最新事件）</h2>
+    <table id="tbl"><thead><tr><th>国家</th><th>年</th><th>风险 p</th><th>实际冲突</th><th>主导因子</th></tr></thead>
+    <tbody><tr><td colspan="5" style="color:var(--mut)">等待事件…</td></tr></tbody></table>
+    <h2 style="margin-top:16px">SHAP 因子贡献（最新事件 · log-odds）</h2>
+    <div class="bars" id="shap">—</div>
+  </div>
+
+  <div class="card">
+    <h2>事件日志</h2>
+    <div id="log"></div>
+    <h2 style="margin-top:14px">手动评分（POST /score）</h2>
+    <form id="f">
+      <input id="f_e"  placeholder="e_star"      value="0.5">
+      <input id="f_l"  placeholder="log_level"   value="8.0">
+      <input id="f_g"  placeholder="growth"      value="0.05">
+      <input id="f_v"  placeholder="volatility"  value="0.02">
+      <input id="f_s"  placeholder="slope"       value="0.01">
+      <input id="f_n"  placeholder="neighbor_e"  value="0.3">
+      <button type="submit">评分</button>
+    </form>
+    <div class="stat" style="margin-top:8px"><div>返回 <b id="manual">—</b></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+const FEATURES=["e_star","log_level","growth","volatility","slope","neighbor_e"];
+const NN={e_star:"军费异常(F1)",log_level:"军费水平",growth:"军费增速",volatility:"波动",slope:"趋势斜率",neighbor_e:"邻国信号"};
+const es=new EventSource('/stream');
+const dot=document.getElementById('dot'), log=document.getElementById('log');
+const tbody=document.querySelector('#tbl tbody'); let latest=null;
+function logline(t){const d=document.createElement('div');d.textContent=t;log.prepend(d);}
+es.onopen=()=>{document.querySelector('header').classList.add('live');logline('• SSE connected');};
+es.onmessage=e=>{
+  const m=JSON.parse(e.data);
+  if(m.type==='model'){
+    document.getElementById('m_n').textContent=m.test_n;
+    document.getElementById('m_auc').textContent=m.auc.toFixed(3);
+    document.getElementById('m_ci').textContent='['+m.auc_ci95[0].toFixed(3)+', '+m.auc_ci95[1].toFixed(3)+']';
+    document.getElementById('m_brier').textContent=m.brier.toFixed(4);
+    logline('• model ready AUC='+m.auc.toFixed(3));
+  }else if(m.type==='tick'){
+    latest=m;
+    document.getElementById('m_prog').textContent=m.seq+'/'+m.total;
+    const cls=m.p>0.5?'hi':'lo';
+    const actual=m.actual_conflict?'<span class="tag hi">是</span>':'<span class="tag lo">否</span>';
+    const top=m.top_factors.map(f=>NN[f.factor]+'('+f.shap.toFixed(2)+')').join(', ');
+    tbody.innerHTML=`<tr><td>${m.country}</td><td>${m.year}</td>
+      <td><span class="tag ${cls}">${m.p.toFixed(3)}</span></td><td>${actual}</td><td>${top}</td></tr>`;
+    renderShap(m.all_shap);
+    logline(`#${m.seq} ${m.country} ${m.year} p=${m.p.toFixed(3)} ${m.actual_conflict?'⚠冲突':'·'}`);
+  }else if(m.type==='done'){logline('• replay finished');}
+};
+function renderShap(obj){
+  const entries=FEATURES.map(f=>[f,obj[f]||0]);
+  const max=Math.max(0.001,...entries.map(e=>Math.abs(e[1])));
+  entries.sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  document.getElementById('shap').innerHTML=entries.map(([f,v])=>{
+    const w=Math.round(Math.abs(v)/max*100);const col=v>=0?'#f0883e':'#58a6ff';
+    return `<div class="bar"><span class="name">${NN[f]}</span>
+      <span class="track"><span class="fill" style="width:${w}%;background:${col}"></span></span>
+      <span class="v">${v.toFixed(3)}</span></div>`;
+  }).join('');
+}
+document.getElementById('f').onsubmit=async ev=>{
+  ev.preventDefault();
+  const feats={e_star:+f_e.value,log_level:+f_l.value,growth:+f_g.value,volatility:+f_v.value,slope:+f_s.value,neighbor_e:+f_n.value};
+  try{
+    const r=await fetch('/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({features:feats})});
+    const j=await r.json();
+    document.getElementById('manual').textContent='p='+j.p.toFixed(3);
+    renderShap(j.shap);
+  }catch(err){document.getElementById('manual').textContent='error';}
+};
+</script>
+</body>
+</html>

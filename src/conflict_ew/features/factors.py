@@ -10,7 +10,11 @@ import pandas as pd
 from .kalman import fit_kalman
 
 # Feature columns used by the model (kept in one place for ablation studies).
-FEATURE_COLS = ["e_star", "log_level", "growth", "volatility", "slope", "neighbor_e"]
+# Military-intent factors (Layer 1 Kalman) + macro factors (paper §3.2 economic_pressure).
+FEATURE_COLS = [
+    "e_star", "log_level", "growth", "volatility", "slope", "neighbor_e",
+    "gdp_growth", "inflation", "unemployment",
+]
 
 
 def _neighbor_index(relations: pd.DataFrame) -> dict[str, list[tuple[str, float]]]:
@@ -131,6 +135,25 @@ def build_features(
             )
 
     feats = pd.DataFrame(rows)
+
+    # --- Layer-2 economic factors (paper §3.2 economic_pressure) ---------------
+    # Real macro indicators from World Bank WDI (fetched by data_fetch.py).
+    econ_frames: list[pd.DataFrame] = []
+    for code, edf in raw.get("economic", {}).items():
+        e = edf.copy()
+        e["country"] = code
+        econ_frames.append(e[["country", "year", "gdp_growth", "inflation", "unemployment"]])
+    if econ_frames:
+        econ = pd.concat(econ_frames, ignore_index=True)
+        econ["year"] = econ["year"].astype(int)
+        feats = feats.merge(econ, on=["country", "year"], how="left")
+        # Missing macro data -> impute per-column panel median, then 0 (documented).
+        for c in ["gdp_growth", "inflation", "unemployment"]:
+            feats[c] = feats[c].fillna(feats[c].median()).fillna(0.0)
+    else:
+        for c in ["gdp_growth", "inflation", "unemployment"]:
+            feats[c] = 0.0
+
     panel = panel.merge(feats, on=["country", "year"], how="inner")
     kalman_params = pd.DataFrame(kalman_param_rows)
     signals = pd.DataFrame(signal_rows)

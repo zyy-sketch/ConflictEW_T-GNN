@@ -22,6 +22,7 @@ pip install -e ".[dev]"
 ### 运行
 
 ```bash
+python scripts/00_fetch_data.py        # 自动联网抓取真实军费+经济数据 → data/raw_real.json
 python scripts/run_all.py              # 一键跑完 load → features → train → eval → figures
 # 或分阶段：
 python scripts/01_load_data.py
@@ -31,6 +32,25 @@ python scripts/04_eval_backtest.py
 python scripts/05_generate_figures.py
 python scripts/06_repro_check.py       # 可复现性自检（同种子连跑两次比对 hash）
 ```
+
+### 数据来源：自动抓取真实数据
+
+管道默认使用**真实数据**（`config.yaml → data.source: real`）。`scripts/00_fetch_data.py`
+通过 World Bank WDI API 自动抓取各国真实军费支出（SIPRI 口径 `MS.MIL.XPND.CD`）
+与宏观经济指标（GDP 增速 / 通胀率 / 失业率），缓存到 `data/raw_real.json`，
+下游所有步骤均基于该缓存离线、可复现运行。若缓存缺失，`load_raw` 会自动触发抓取
+（程序"自己找数据"）。切换回演示用合成数据设 `data.source: synthetic`。
+
+| 指标 | World Bank WDI id | 对应论文因子 |
+|------|------------------|--------------|
+| 军费支出（现价美元） | `MS.MIL.XPND.CD` | 军费异常（Kalman 残差，§3.1） |
+| GDP 年增长率 | `NY.GDP.MKTP.KD.ZG` | 经济压力（§3.2） |
+| 通胀率 | `FP.CPI.TOTL.ZG` | 经济压力（§3.2） |
+| 失业率 | `SL.UEM.TOTL.ZS` | 经济压力（§3.2） |
+
+> 冲突标签 / 邻国矩阵仍复用 `db_data.json` 中项目策展的验证集（真实 COW 抽取为后续步骤）。
+> 政治不稳（Polity IV）、领土争端（ICOW）、同盟关系（ATOP）三类因子在 `SCI_OPTIMIZATION_PLAN.md`
+> 中标注为"需外部静态数据集"，当前以经济压力因子作为多因子层的可抓取替代。
 
 ### 测试
 
@@ -42,8 +62,9 @@ pytest -q
 
 | 产物 | 内容 | 对应计划条款 |
 |------|------|--------------|
-| `data_manifest.json` | 数据版本戳 / SHA256 / 快照日期 / SIPRI·COW 版本 | A3 |
-| `panel.csv` / `features.csv` | 国家-年面板与 6 因子特征（e* 等） | A1 |
+| `data/raw_real.json` | 自动抓取的真实军费+经济数据缓存（World Bank WDI） | A3 |
+| `data_manifest.json` | 数据来源 / 版本戳 / SHA256 / 快照日期 / SIPRI·COW 版本 | A3 |
+| `panel.csv` / `features.csv` | 国家-年面板与 9 因子特征（e* + 经济压力等） | A1 |
 | `kalman_params.csv` | 每国拟合的 σ²ε/σ²η/σ²ζ/log-lik | A3 |
 | `kalman_signals.csv` | 标准化一步预测残差 e* 与异常标记 | §3.1 |
 | `oos_predictions.csv` | blocked CV 各 fold 的样本外预测 | B3 |
