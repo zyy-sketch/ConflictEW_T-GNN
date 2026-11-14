@@ -42,7 +42,8 @@ def compute_hash_round(force_core: bool) -> str:
         write_cleaned(clean, rep)
         panel, _ = build_panel(clean)
         signals = compute_kalman_signals(panel)
-        features = build_features(panel, signals, ext.adjacency)
+        features = build_features(panel, signals, ext.adjacency,
+                                  out_path=get_path("features_file"))
         run = run_blocked_cv(features)
         compute_shap(features, run.model_final, None)
     return meta.pipeline_hash()

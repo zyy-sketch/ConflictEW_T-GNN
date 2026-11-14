@@ -93,7 +93,8 @@ def run_all(force_refresh: bool = False, generate_report_after: bool = True,
     signals = compute_kalman_signals(panel)
 
     # ---- ⑥ 多因子特征构造（F06）----
-    features = build_features(panel, signals, ext.adjacency)
+    features = build_features(panel, signals, ext.adjacency,
+                              out_path=get_path("features_file"))
     save_factor_registry()
 
     # ---- ⑦ 模型训练与 OOS 预测（F07）----

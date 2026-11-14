@@ -14,7 +14,6 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 
 from . import meta
@@ -103,70 +102,6 @@ def lead_time_analysis(oos_test: pd.DataFrame, panel: pd.DataFrame,
             "n_onsets_covered": covered, "n_onsets_total": len(onsets),
             "coverage_rate": covered / len(onsets) if len(onsets) else None,
             "threshold": threshold}
-
-
-# ---------------------------------------------------------------- 基准模型
-def baseline_logistic_re(features: pd.DataFrame, feat_cols: list[str]) -> tuple[list[dict], float]:
-    """logistic(RE) 基准：面板 logit + country 固定效应（随机效应的近似，已标注）。
-
-    严格防泄漏：只在训练期拟合，测试期预测；返回 (rows, test_auc)。
-    """
-    cv = cfg()["model"]["cv"]
-    df = features.copy()
-    X = df[feat_cols].fillna(0.0)
-    # country 固定效应
-    country_dummies = pd.get_dummies(df["iso3"], prefix="c")
-    Xf = pd.concat([X.reset_index(drop=True), country_dummies.reset_index(drop=True)], axis=1)
-    y = df["y_onset"].to_numpy()
-    spw = (len(y) - y.sum()) / max(y.sum(), 1)
-
-    train_mask = (df["year"] >= cv["cv_start"]) & (df["year"] < cv["test_start"])
-    test_mask = (df["year"] >= cv["test_start"]) & (df["year"] <= cv["test_end"])
-    clf = LogisticRegression(C=0.1, max_iter=2000, class_weight={0: 1.0, 1: spw})
-    clf.fit(Xf[train_mask], y[train_mask])
-    p_test = clf.predict_proba(Xf[test_mask])[:, 1]
-    rows = [{"country": c, "year": int(yy), "p_conflict": float(p),
-             "model": "logistic_RE"} for c, yy, p in
-            zip(df[test_mask]["iso3"], df[test_mask]["year"], p_test)]
-    auc = float(roc_auc_score(y[test_mask], p_test)) if len(np.unique(y[test_mask])) > 1 else float("nan")
-    return rows, auc
-
-
-def baseline_var(features: pd.DataFrame) -> tuple[list[dict], float]:
-    """VAR(1) 基准：对每国 [mil_growth, gdp_growth] 拟合 pooled VAR(1)，
-    一步预测军费增速 z 分 → 训练期校准的 logistic 链接转概率（已标注简化）。"""
-    cv = cfg()["model"]["cv"]
-    df = features.sort_values(["iso3", "year"]).copy()
-    # 军费/经济序列来自面板（features 不含原始值，避免重复存储）
-    panel = pd.read_csv(get_path("panel_file"))
-    df = df.merge(panel[["iso3", "year", "mil_expense_log", "gdp_growth"]],
-                  on=["iso3", "year"], how="left")
-    df["mil_growth"] = df.groupby("iso3")["mil_expense_log"].diff()
-    df["lag_mil"] = df.groupby("iso3")["mil_growth"].shift(1)
-    df["lag_gdp"] = df.groupby("iso3")["gdp_growth"].shift(1)
-
-    # 训练期 pooled VAR(1)：mil_growth_t = a0 + a1*lag_mil + a2*lag_gdp
-    tr = df[(df["year"] >= cv["cv_start"]) & (df["year"] < cv["test_start"])].dropna(
-        subset=["mil_growth", "lag_mil", "lag_gdp"])
-    A = np.column_stack([np.ones(len(tr)), tr["lag_mil"], tr["lag_gdp"]])
-    coef, *_ = np.linalg.lstsq(A, tr["mil_growth"], rcond=None)
-    tr["z_pred"] = (tr["mil_growth"] - (A @ coef)) / max(tr["mil_growth"].std(), 1e-9)
-
-    # 训练期校准：sigmoid(a + b*z)
-    zz = tr["z_pred"].to_numpy()
-    yy = tr["y_onset"].to_numpy()
-    design = np.column_stack([np.ones(len(zz)), zz])
-    bc, *_ = np.linalg.lstsq(design, np.clip(yy, 0.05, 0.95), rcond=None)
-
-    te = df[(df["year"] >= cv["test_start"]) & (df["year"] <= cv["test_end"])].dropna(
-        subset=["mil_growth", "lag_mil", "lag_gdp"])
-    B = np.column_stack([np.ones(len(te)), te["lag_mil"], te["lag_gdp"]])
-    z_test = (te["mil_growth"] - (B @ coef)) / max(tr["mil_growth"].std(), 1e-9)
-    p_test = 1 / (1 + np.exp(-(bc[0] + bc[1] * z_test)))
-    rows = [{"country": c, "year": int(yy), "p_conflict": float(p), "model": "VAR"}
-            for c, yy, p in zip(te["iso3"], te["year"], p_test)]
-    auc = float(roc_auc_score(te["y_onset"], p_test)) if len(np.unique(te["y_onset"])) > 1 else float("nan")
-    return rows, auc
 
 
 # ---------------------------------------------------------------- 消融
@@ -318,39 +253,30 @@ def evaluate(features: pd.DataFrame, oos: pd.DataFrame, panel: pd.DataFrame,
             metrics["precision_at_suggested"] = {"value": tp_s / max(tp_s + fp_s, 1), "threshold": best_t}
             metrics["lead_time_at_suggested"] = lead_time_analysis(oos, panel, threshold=best_t)
 
-    # ---- 基准对比 ----
-    baselines = {}
-    logit_rows, logit_auc = baseline_logistic_re(features, get_factor_columns())
-    var_rows, var_auc = baseline_var(features)
-    baselines["logistic_RE"] = {"auc": logit_auc if logit_auc == logit_auc else None,
-                                "label": "logistic(RE) 基准（country 固定效应近似）",
-                                "model": "logistic_RE"}
-    baselines["VAR"] = {"auc": var_auc if var_auc == var_auc else None,
-                        "label": "VAR(1) 基准（军费增速/GDP 增速，简化实现）",
-                        "model": "VAR"}
-    # 差异检验 + FDR 校正（与主模型对比）
+    # ---- 基准对比（论文 Table III 规范实现，见 baselines.py）----
+    from .baselines import (baseline_logistic_re, baseline_var, delong_ci,
+                            paired_bootstrap, partial_auc)
+    bl_re = baseline_logistic_re(features, get_factor_columns())
+    bl_var = baseline_var(features)
+    metrics["baselines"] = {}
     diffs = []
-    for name, rows, auc_b in (("logistic_RE", logit_rows, logit_auc), ("VAR", var_rows, var_auc)):
-        if not np.isfinite(auc_b) or len(rows) == 0:
-            diffs.append({"baseline": name, "diff": None, "p_value": None,
-                          "note": "基准训练失败（降级）"})
-            continue
-        p_b = np.array([r["p_conflict"] for r in rows])
-        # 对齐 y（同一测试期样本）
-        key_b = {(r["country"], r["year"]): i for i, r in enumerate(rows)}
-        y_al = np.array([y_test[list(zip(test["country"], test["year"])).index((c, yy))]
-                         if (c, yy) in key_b else np.nan
-                         for c, yy in zip(test["country"], test["year"])])
-        p_al = np.array([p_b[key_b[(c, yy)]] if (c, yy) in key_b else np.nan
-                         for c, yy in zip(test["country"], test["year"])])
-        mask = np.isfinite(y_al) & np.isfinite(p_al)
-        if mask.sum() < 20:
-            diffs.append({"baseline": name, "diff": None, "p_value": None, "note": "样本不足"})
-            continue
-        d = bootstrap_auc_diff(y_al[mask], p_test[mask], p_al[mask],
-                               n_boot=ecfg["bootstraps"])
-        d["baseline"] = name
+    for name, b in (("logistic_RE", bl_re), ("VAR2", bl_var)):
+        summary = {k: v for k, v in b.items() if k != "test_rows"}
+        # 与主模型测试期逐行对齐 → 规范配对 bootstrap（Table III 同式）
+        p_map = {(r["country"], r["year"]): r["p_conflict"] for r in b["test_rows"]}
+        keys = list(zip(test["country"], test["year"]))
+        mask = np.array([k in p_map for k in keys])
+        y_al = y_test[mask]
+        p_al = np.array([p_map[k] for k, m in zip(keys, mask) if m])
+        if mask.sum() >= 20:
+            d = paired_bootstrap(y_al, p_test[mask], p_al, n_boot=ecfg["bootstraps"])
+            d["baseline"] = name
+            d["n_paired"] = int(mask.sum())
+        else:
+            d = {"baseline": name, "diff": None, "p_value": None,
+                 "note": "基准样本不足或训练失败"}
         diffs.append(d)
+        metrics["baselines"][name] = summary
     # FDR
     pvals = np.array([d.get("p_value", 1.0) if d.get("p_value") is not None else 1.0 for d in diffs])
     sig = bh_fdr(pvals, alpha=ecfg["fdr_alpha"])

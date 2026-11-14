@@ -171,9 +171,10 @@ def build_features(panel: pd.DataFrame, signals: pd.DataFrame,
         feats = feats.merge(p, on=["iso3", "year"], how="left")
     feats = feats.merge(df[["iso3", "year", "y_onset"]], on=["iso3", "year"], how="left")
     feats = feats.sort_values(["iso3", "year"]).reset_index(drop=True)
-    out_path = out_path or get_path("features_file")
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    feats.to_csv(out_path, index=False)
+    # out_path=None → 纯计算不落盘（测试安全）；持久化由调用方显式传路径
+    if out_path is not None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        feats.to_csv(out_path, index=False)
     meta.log_stage("build_features", n_rows=len(feats), n_countries=feats["iso3"].nunique(),
                    n_positive=int(feats["y_onset"].sum()), degraded_f2=int(feats["F2_degraded"].max()))
     return feats
