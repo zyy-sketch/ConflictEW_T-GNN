@@ -115,10 +115,11 @@ def _panel_growth() -> pd.DataFrame:
 
 def _pack(name: str, label: str, y_te: np.ndarray, p_te: np.ndarray,
           tau: float, q: float, cm: dict, test_df: pd.DataFrame,
-          panel: pd.DataFrame) -> dict:
+          panel: pd.DataFrame, p_train: np.ndarray | None = None,
+          y_train: np.ndarray | None = None) -> dict:
     _, lo, hi = delong_ci(y_te, p_te)
     lt = lead_time_analysis(test_df, panel, threshold=tau)
-    return {"model": name, "label": label,
+    out = {"model": name, "label": label,
             "n": int(len(y_te)), "n_test_positive": int(y_te.sum()),
             "auc": round(float(roc_auc_score(y_te, p_te)), 4),
             "auc_ci_delong": [round(lo, 4), round(hi, 4)],
@@ -135,7 +136,11 @@ def _pack(name: str, label: str, y_te: np.ndarray, p_te: np.ndarray,
             "test_rows": [{"country": c, "year": int(yy), "p_conflict": float(pp),
                            "fold": "test", "model": name}
                           for c, yy, pp in zip(test_df["country"], test_df["year"], p_te)]}
-
+    if p_train is not None and y_train is not None:
+        out["train_preds"] = {"p": [float(v) for v in p_train],
+                              "y": [int(v) for v in y_train],
+                              "note": "训练窗 in-sample 分数（基线自身校准/阈值口径）"}
+    return out
 
 # ---------------------------------------------------------------- (1) LogReg(RE)
 def baseline_logistic_re(features: pd.DataFrame, feat_cols: list[str]) -> dict:
@@ -167,7 +172,7 @@ def baseline_logistic_re(features: pd.DataFrame, feat_cols: list[str]) -> dict:
     return _pack("logistic_RE",
                  "LogReg (RE): rare-events class-weighted logistic (no fixed effects; "
                  "lagged unfiltered expenditure growth replaces F1)", y_te, p_lr_te,
-                 tau, q, cm, test_df, panel)
+                 tau, q, cm, test_df, panel, p_train=p_lr_tr, y_train=yv[tr])
 
 
 # ---------------------------------------------------------------- (2) VAR(2)
@@ -219,4 +224,5 @@ def baseline_var(features: pd.DataFrame) -> dict:
     return _pack("VAR2",
                  "VAR(2): pooled two-lag autoregression on [mil growth, GDP growth], "
                  "OLS + logistic link calibrated on the training window",
-                 y_te, p_te, tau, q, cm, var_df, panel)
+                 y_te, p_te, tau, q, cm, var_df, panel,
+                 p_train=trv["p_hat"].to_numpy(), y_train=yyv)
