@@ -1,194 +1,132 @@
-"""Real data acquisition from the World Bank World Development Indicators (WDI).
+"""F01 军费数据自动采集：World Bank WDI API 抓取 + 缓存 + 降级。
 
-This module lets the pipeline obtain **real** data by itself instead of relying on
-the hard-coded synthetic ``db_data.json``. It fetches:
-
-  * Military expenditure (current USD) — indicator ``MS.MIL.XPND.CD``
-    (SIPRI data hosted by the World Bank; this is the paper's §3.1 input).
-  * GDP growth (annual %)            — ``NY.GDP.MKTP.KD.ZG``
-  * Inflation, consumer prices (%)  — ``FP.CPI.TOTL.ZG``
-  * Unemployment, total (% labor)   — ``SL.UEM.TOTL.ZS``
-
-The fetched series are cached to ``data/raw_real.json`` so that every downstream
-step stays reproducible (offline) and the acquisition is auditable. The conflict
-labels / neighbour matrix are reused from ``db_data.json`` (the project's curated
-validation set) — swapping in a real Correlates-of-War extract is a documented
-next step.
-
-Design notes
-------------
-* No third-party HTTP client is required: only the standard library ``urllib``.
-* A single bulk call per indicator covers all countries (semicolon-separated),
-  which keeps the request count low (4 calls total).
-* ``countryiso3code`` (not ``country.id``) is used as the join key because it is
-  the stable ISO-3 code that matches ``db_data.json`` country ids.
+- 从 WDI API 抓取军费支出（MS.MIL.XPND.CD）与经济协变量（GDP 增速/通胀/失业率）
+- 缓存至 data/raw_real.json（PRD F01：支持 160+ 国 1949-至今）
+- 异常路径（PRD §5.3）：API 超时/空响应 → 使用缓存或模拟数据 + 标记数据时间
 """
 from __future__ import annotations
 
-import datetime
 import json
 import time
-import urllib.error
-import urllib.request
-from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
-WB_BASE = "https://api.worldbank.org/v2"
+import pandas as pd
+import requests
 
-# Indicator id -> human label used inside raw_real.json
-DEFAULT_INDICATORS: dict[str, str] = {
-    "military_usd": "MS.MIL.XPND.CD",
-    "gdp_growth": "NY.GDP.MKTP.KD.ZG",
-    "inflation": "FP.CPI.TOTL.ZG",
-    "unemployment": "SL.UEM.TOTL.ZS",
-}
+from . import meta
+from .paths import cfg, get_path
 
 
-def _fetch_indicator(
-    iso3_codes: list[str],
-    indicator: str,
-    year_min: int,
-    year_max: int,
-    retries: int = 4,
-    timeout: int = 30,
-) -> list[dict[str, Any]]:
-    """Fetch one indicator for many countries in a single bulk request."""
-    codes = ";".join(iso3_codes)
-    url = (
-        f"{WB_BASE}/country/{codes}/indicator/{indicator}"
-        f"?format=json&date={year_min}:{year_max}&per_page=20000"
-    )
-    last_err = ""
-    for attempt in range(retries):
-        try:
-            req = urllib.request.Request(
-                url,
-                headers={
-                    "Accept": "application/json",
-                    "User-Agent": "ConflictEW/0.2 (research; reproducible pipeline)",
-                },
-            )
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                payload = json.loads(resp.read().decode("utf-8"))
-            if isinstance(payload, list) and len(payload) >= 2 and isinstance(payload[1], list):
-                return payload[1]
-            return []
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError) as e:
-            last_err = str(e)
-            if attempt < retries - 1:
-                time.sleep(1.5 * (attempt + 1))
-    print(f"  ! indicator {indicator} failed after {retries} attempts: {last_err}")
-    return []
+class DataSourceUnavailable(Exception):
+    """数据源不可达（PRD §5.3 异常路径：数据源不可达）。"""
 
 
-def fetch_real_dataset(
-    db_path: Path,
-    year_min: int = 1990,
-    year_max: int = 2024,
-    indicators: dict[str, str] | None = None,
-) -> dict[str, Any]:
-    """Build a real-data dict (raw_real.json compatible) from World Bank WDI.
+def _indicator_map() -> dict[str, str]:
+    ind = cfg()["data"]["wdi"]["indicators"]
+    return {"mil_expense": ind["mil_expense"], "gdp_growth": ind["gdp_growth"],
+            "inflation": ind["inflation"], "unemployment": ind["unemployment"]}
 
-    Returns a dict with keys: ``meta``, ``countries``, ``military_spending``,
-    ``economic``, ``relations``, ``conflicts`` (reused from ``db_path``), plus
-    empty ``factor_scores``/``alerts``/``settings``/``tgnn`` placeholders so the
-    structure is loadable by ``data.load_raw``.
+
+def fetch_wdi_live(start_year: int, end_year: int, timeout_sec: Optional[int] = None,
+                   retries: Optional[int] = None) -> pd.DataFrame:
+    """真实调用 World Bank WDI API，返回长表 DataFrame（iso3, year, indicator, value）。
+
+    :raises DataSourceUnavailable: API 不可达 / 响应异常 / 结果为空。
     """
-    if indicators is None:
-        indicators = DEFAULT_INDICATORS
-
-    with open(db_path, encoding="utf-8") as f:
-        db = json.load(f)
-
-    codes: list[str] = [str(c["id"]) for c in db["countries"] if str(c.get("id", "")).strip()]
-    codes = sorted(set(codes))
-    print(f"[fetch] {len(codes)} countries, years {year_min}-{year_max}")
-
-    # --- bulk fetch each indicator ---
-    raw_obs: dict[str, list[dict[str, Any]]] = {}
-    for key, ind in indicators.items():
-        print(f"[fetch] {key:14s} <- {ind}")
-        obs = _fetch_indicator(codes, ind, year_min, year_max)
-        raw_obs[key] = obs
-        print(f"          got {len(obs)} observations")
-
-    # --- pivot into {country: {year: value}} for each indicator ---
-    pivots: dict[str, dict[str, float]] = {k: {} for k in indicators}
-    coverage: dict[str, set[str]] = {k: set() for k in indicators}
-    for key, obs in raw_obs.items():
-        for row in obs:
-            code = row.get("countryiso3code") or (row.get("country") or {}).get("id")
-            if not code:
-                continue
-            year = str(row.get("date"))
-            val = row.get("value")
-            if val is None:
-                continue
+    wdi_cfg = cfg()["data"]["wdi"]
+    timeout_sec = timeout_sec or wdi_cfg["timeout_sec"]
+    retries = retries or wdi_cfg["retries"]
+    fmt = wdi_cfg["format"]
+    url_tpl = wdi_cfg["base_url"] + "{ind}" + fmt
+    frames: list[pd.DataFrame] = []
+    for name, code in _indicator_map().items():
+        url = url_tpl.format(ind=code, start=start_year, end=end_year)
+        resp: Optional[requests.Response] = None
+        last_err: Optional[Exception] = None
+        for attempt in range(retries + 1):
             try:
-                pivots[key][f"{code}|{year}"] = float(val)
-                coverage[key].add(code)
-            except (TypeError, ValueError):
-                continue
-
-    # --- assemble per-country structures ---
-    military_spending: dict[str, list[dict[str, Any]]] = {}
-    economic: dict[str, list[dict[str, Any]]] = {}
-    for code in codes:
-        mil = [
-            {"year": int(y), "value": pivots["military_usd"][f"{code}|{y}"]}
-            for y in (str(yr) for yr in range(year_min, year_max + 1))
-            if f"{code}|{y}" in pivots["military_usd"]
-        ]
-        if mil:
-            military_spending[code] = mil
-        econ_rows = []
-        for yr in range(year_min, year_max + 1):
-            y = str(yr)
-            g = pivots["gdp_growth"].get(f"{code}|{y}")
-            i = pivots["inflation"].get(f"{code}|{y}")
-            u = pivots["unemployment"].get(f"{code}|{y}")
-            if g is None and i is None and u is None:
-                continue
-            econ_rows.append(
-                {
-                    "year": yr,
-                    "gdp_growth": g,
-                    "inflation": i,
-                    "unemployment": u,
-                }
-            )
-        if econ_rows:
-            economic[code] = econ_rows
-
-    meta = {
-        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "source": "World Bank World Development Indicators (api.worldbank.org/v2)",
-        "military_expenditure_indicator": indicators["military_usd"],
-        "military_expenditure_note": "SIPRI Military Expenditure database, hosted by World Bank WDI",
-        "indicators": indicators,
-        "year_min": year_min,
-        "year_max": year_max,
-        "n_countries": len(codes),
-        "countries_with_military": len(military_spending),
-        "countries_with_economic": len(economic),
-        "coverage": {k: sorted(v) for k, v in coverage.items()},
-    }
-
-    return {
-        "meta": meta,
-        "countries": db["countries"],
-        "military_spending": military_spending,
-        "economic": economic,
-        "relations": db["relations"],
-        "conflicts": db["conflicts"],
-        "factor_scores": {},
-        "alerts": [],
-        "settings": {},
-        "tgnn_signals": {},
-    }
+                resp = requests.get(url, timeout=timeout_sec)
+                if resp.status_code == 200:
+                    break
+                last_err = DataSourceUnavailable(f"HTTP {resp.status_code}")
+            except Exception as e:  # noqa: BLE001
+                last_err = e
+            if attempt < retries:
+                time.sleep(1.5 * (attempt + 1))
+        if resp is None or resp.status_code != 200:
+            raise DataSourceUnavailable(f"WDI 指标 {name} 抓取失败: {last_err}")
+        data = resp.json()
+        # WDI 返回 [pageMeta, [records]]
+        records = data[1] if isinstance(data, list) and len(data) > 1 else data
+        rows = []
+        for r in records:
+            iso3 = (r.get("countryiso3code") or "").strip()
+            value = r.get("value")
+            year = r.get("date")
+            if iso3 and value is not None and year and year.isdigit():
+                rows.append({"iso3": iso3, "year": int(year), "indicator": name, "value": float(value)})
+        if not rows:
+            raise DataSourceUnavailable(f"WDI 指标 {name} 返回空记录")
+        frames.append(pd.DataFrame(rows))
+        meta.log_stage("wdi_fetch", indicator=name, n_rows=len(rows), status="ok")
+    df = pd.concat(frames, ignore_index=True)
+    df = df.pivot_table(index=["iso3", "year"], columns="indicator", values="value").reset_index()
+    df.columns.name = None
+    return df
 
 
-def save_real_dataset(dataset: dict[str, Any], out_path: Path) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(dataset, ensure_ascii=False), encoding="utf-8")
-    print(f"[fetch] wrote {out_path} ({out_path.stat().st_size // 1024} KB)")
+def load_simulated_wdi() -> pd.DataFrame:
+    """读取模拟 WDI 数据（降级运行）。"""
+    sim_path = get_path("simulated_data_file")
+    if not sim_path.exists():
+        from . import simulate
+
+        simulate.write_simulated_data()
+    with open(sim_path, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+    df = pd.DataFrame(payload["records"])
+    return df
+
+
+def get_military_and_economic_data(start_year: Optional[int] = None,
+                                   end_year: Optional[int] = None,
+                                   force_refresh: bool = False) -> dict[str, Any]:
+    """F01 统一入口：返回 {df, source, fetched_at, cache_used}。
+
+    优先级：真实 WDI 抓取 → data/raw_real.json 缓存 → 模拟数据（标记 simulated）。
+    返回结构同时被 F03 清洗与 F04 面板构建消费。
+    """
+    cfg_data = cfg()["data"]
+    start_year = start_year or cfg_data["panel"]["start_year"]
+    end_year = end_year or cfg_data["panel"]["end_year"]
+    cache_path = get_path("raw_real_file")
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not force_refresh and cache_path.exists():
+        with open(cache_path, "r", encoding="utf-8") as f:
+            cached = json.load(f)
+        meta.log_stage("wdi_cache_hit", path=str(cache_path))
+        return {"df": pd.DataFrame(cached["records"]), "source": cached.get("source", "cache"),
+                "fetched_at": cached.get("fetched_at"), "cache_used": True}
+
+    try:
+        df = fetch_wdi_live(start_year, end_year)
+        source = "wdi-live"
+        fetched_at = meta.utcnow_iso()
+        meta.log_stage("wdi_live_success", n_countries=df["iso3"].nunique(), years=f"{df['year'].min()}-{df['year'].max()}")
+    except DataSourceUnavailable as e:
+        meta.log_stage("wdi_live_failed", error=str(e))
+        if cfg_data["wdi"].get("simulated_fallback", True):
+            df = load_simulated_wdi()
+            source = "simulated"
+            fetched_at = meta.utcnow_iso()
+            meta.log_stage("wdi_fallback_simulated", error=str(e))
+        else:
+            raise DataSourceUnavailable("WDI 不可达且未启用模拟降级") from e
+
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump({"meta": {"source": source, "fetched_at": fetched_at,
+                            "start_year": start_year, "end_year": end_year},
+                   "records": df.to_dict(orient="records")}, f, ensure_ascii=False, indent=1)
+    meta.log_stage("wdi_cache_write", path=str(cache_path), source=source)
+    return {"df": df, "source": source, "fetched_at": fetched_at, "cache_used": False}

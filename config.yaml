@@ -1,98 +1,126 @@
-# =============================================================================
-# ConflictEW T-GNN — 可复现研究配置
-# -----------------------------------------------------------------------------
-# 所有超参数、随机种子、路径与数据口径集中于此文件，代码中不出现"魔法数字"。
-# 论文 Methods / Reproducibility Statement 直接引用本文件与 artifacts/ 产物。
-# =============================================================================
+# ConflictEW 军费冲突早期预警系统 — 全局配置
+# 超参不落代码：所有可调参数集中于此（PRD §8.4 可维护性）
 
 project:
-  name: conflict-ew-kalman
-  version: "0.2.0"
+  name: ConflictEW
+  version: v1.0.0
+  seed: 20240101          # 全链路固定种子（PRD §8.2 可复现性）
+  paper_title: "Multi-Indicator Conflict Early Warning: A Kalman Filter Approach with SIPRI Military Expenditure Data"
 
-# --- 可复现性：全链路固定种子 ------------------------------------------------
-reproducibility:
-  seed: 20240101            # Python random / numpy / xgboost 统一种子
-  force_seed: 20240101      # 前端 D3 力导向图布局种子（与 dashboard_v3.html 对齐）
+paths:
+  data_dir: data
+  artifact_dir: artifacts
+  report_dir: reports
+  web_dir: web
+  raw_real_file: data/raw_real.json       # WDI 真实抓取缓存（F01）
+  simulated_data_file: data/raw_simulated.json   # 模拟降级数据（数据源不可达时）
+  external_dir: data/external              # 外部静态数据落库目录（F02）
+  panel_file: data/panel.csv               # 国家×年面板（F04）
+  manifest_file: data/data_manifest.json   # 数据清单（F03）
+  features_file: data/features.csv         # 6 因子特征（F06）
+  kalman_signals_file: data/kalman_signals.csv   # Kalman 信号（F05）
+  kalman_params_file: data/kalman_params.csv     # Kalman 参数（F05）
+  oos_file: artifacts/oos_predictions.csv  # OOS 概率（F07）
+  shap_file: artifacts/shap_values.csv     # SHAP 归因（F08）
+  shap_importance_file: artifacts/shap_importance.csv
+  metrics_file: artifacts/metrics.json     # 回测指标（F09）
+  model_file: artifacts/xgb_model.json     # 序列化模型
+  params_file: artifacts/xgb_params.json   # 模型超参
+  alerts_file: artifacts/alerts.json       # 预警记录（F15）
+  alert_history_file: artifacts/alert_history.json
+  web_data_file: web/data/app_data.js      # 前端数据导出
+  run_log_file: artifacts/run_log.jsonl    # 逐阶段 run-log
+  threshold_config_section: eval.thresholds  # 阈值写入 config.yaml 的路径（F16）
 
-# --- 数据口径 -----------------------------------------------------------------
 data:
-  source_dir: .
-  source: real                     # synthetic（硬编码 db_data.json）| real（自动抓取 World Bank 真实数据）
-  full_file: db_data.json          # 合成数据主源（仅 source=synthetic 时使用）
-  real_file: data/raw_real.json    # 真实数据缓存（source=real 时使用；缺失时自动抓取）
-  compact_file: cdata.json         # 紧凑格式（前端 dashboard 使用）
-  year_min: 1990                   # 真实数据抓取起始年
-  year_max: 2024                   # 真实数据抓取截止年
-  # World Bank WDI 指标映射（data_fetch.py 使用）
-  wb_indicators:
-    military_usd: MS.MIL.XPND.CD      # 军费支出（现价美元），SIPRI 口径
-    gdp_growth: NY.GDP.MKTP.KD.ZG     # GDP 年增长率 (%)
-    inflation: FP.CPI.TOTL.ZG         # 通胀率 (%)
-    unemployment: SL.UEM.TOTL.ZS      # 失业率 (% 劳动力)
-  snapshot_date: "2024-06-20"      # 数据快照日期
-  sipri_version: "SIPRI Milex via World Bank WDI (MS.MIL.XPND.CD)"
-  cow_version: "Correlates of War v5.x (placeholder — cite exact version)"
+  wdi:
+    base_url: https://api.worldbank.org/v2/country/all/indicator/
+    indicators:                          # 经济协变量（F6 F3 经济压力因子）
+      mil_expense: MS.MIL.XPND.CD        # 军费支出（美元现价）
+      gdp_growth: NY.GDP.MKTP.KD.ZG      # GDP 增速
+      inflation: FP.CPI.TOTL.ZG          # 通胀率
+      unemployment: SL.UEM.TOTL.ZS       # 失业率
+    format: "?format=json&per_page=20000&date={start}:{end}"
+    timeout_sec: 15
+    retries: 2
+    cache_file: data/raw_real.json
+    simulated_fallback: true             # 失败时降级为模拟数据（PRD §5.3 异常路径）
+  panel:
+    min_years: 20                        # 覆盖≥20 年的国家才纳入面板（§8.2）
+    start_year: 1970
+    end_year: 2024
+  labels:
+    lookahead_months: 12                 # y=1 ⟺ 后 12 个月内新冲突 onset（§8.2）
+    cow_standards: [use_of_force, battle_deaths_25, state_party_2, incompatibility]
+    positive_rate_target: 0.025          # 正样本率 ~2-3%
 
-# --- Kalman 局部线性趋势滤波（对应论文 §3.1）----------------------------------
-kalman:
-  log_transform: true
-  eps: 1e-6                 # log 下界，避免 log(0)
-  init_p: 1e6               # 初始状态方差（扩散先验）
-  grid_q_eta: [1e-4, 3e-4, 1e-3, 3e-3, 1e-2]     # σ²η 网格（水平噪声）
-  grid_q_zeta: [1e-7, 1e-6, 1e-5, 1e-4, 1e-3]     # σ²ζ 网格（斜率噪声）
-  grid_r_eps: [1e-3, 3e-3, 1e-2, 3e-2, 1e-1]      # σ²ε 网格（观测噪声）
-  anomaly_sigma: 2.0        # ±2σ 异常阈值
-
-# --- 多因子加权（对应论文 §3.2，用于展示层；训练层见 model 节）-----------------
-factors:
-  weights:
-    military_anomaly: 0.25
-    arms_race: 0.20
-    economic_pressure: 0.15
-    political_instability: 0.15
-    territorial_dispute: 0.15
-    alliance_tension: 0.10
-
-# --- 模型训练（对应论文 §3.2 / §4）---------------------------------------------
 model:
-  name: xgboost
-  features: [e_star, log_level, growth, volatility, slope, neighbor_e, gdp_growth, inflation, unemployment]
-  test_start: 2015          # 严格 out-of-sample 起始年（预注册口径）
-  n_splits: 5               # expanding-window 折数
-  window_years: 2           # 每折测试窗长度（年）
-  params:
+  xgb:
+    n_estimators: 300
     max_depth: 3
     learning_rate: 0.05
-    n_estimators: 200
     subsample: 0.8
     colsample_bytree: 0.8
-    reg_lambda: 1.0
-    min_child_weight: 1
-  rare_event:
-    enabled: true
-    pos_weight: 5.0         # scale_pos_weight（稀有事件加权 BCE）
-    prior_correction: true  # King-Zeng (2001) 先验校正（应用于 logistic 基准）
-    prior_tau: 0.5          # 总体真实事件发生率 τ（用于先验校正；投稿前以领域先验或文献校准）
-  baselines: [logistic_rare_event, kalman_only]   # 稀有事件校正逻辑回归 / 仅 e* 单特征（消融）
+    l2_reg: 1.0
+    min_child_weight: 2
+    scale_pos_weight_auto: true          # 稀有事件校正（F07）
+    random_state: 20240101
+  cv:
+    n_folds: 5                           # blocked expanding-window CV（F07）
+    train_start: 1990
+    cv_start: 1990
+    test_start: 2015                     # 严格 out-of-sample
+    test_end: 2024
+    early_stopping_rounds: 30
+    group_by_country: true               # blocked：按国家分组保时序
+  shap:
+    local_accuracy_tol: 0.000001            # φ₀+Σφⱼ=logit(p) 容差（F08）
+    substantial_threshold: 0.05             # |φ|<0.05 非实质驱动因子（F08）
 
-# --- 评估（对应论文 §4）---------------------------------------------------------
 eval:
-  n_bootstrap: 1000
-  confidence: 0.95
-  brier_bins: 10
-  alpha_fdr: 0.05           # Benjamini-Hochberg FDR 水平
+  thresholds:                            # 三级预警阈值（F16 可配置）
+    high: 0.7
+    mid: 0.5
+  calibration: isotonic                  # Platt/isotonic 校准，训练期拟合（§8.2）
+  bootstraps: 1000                       # bootstrap CI（R3）
+  fdr_alpha: 0.05                        # Benjamini-Hochberg FDR 校正
+  ci_level: 0.95
+  youden_beta: 2.0                       # 阈值选择 Fβ=2（§8.2）
 
-# --- 出图（期刊投稿级矢量图）----------------------------------------------------
-figures:
-  format: pdf               # pdf / svg
-  dpi: 300
-  width_mm: 180             # 期刊双栏宽度约 180 mm
-  palette: RdYlBu
-  colorblind_safe: true
-  font: Arial
+alert:
+  enabled: true
+  notify_channels: [in-app]              # 站内通知；邮件需配置后启用
+  email:
+    enabled: false
+    smtp_host: ""
+    smtp_port: 587
+    from_addr: ""
+    to_addrs: []
+  agent_checklist:                       # 高风险触发 Agent 核查清单（F15）
+    - "核验军费异常信号 e* 是否连续 ≥2 年超过 2σ"
+    - "检查邻国军费增速差是否持续为正（军备竞赛迹象）"
+    - "复核经济压力因子（GDP 增速下滑 / 通胀高企 / 失业上升）"
+    - "确认政治不稳信号（Polity 变化 / V-Dem LDI 变化）"
+    - "核对领土争端（ICOW）与同盟变更（ATOP）事件"
+    - "人工复核概率与 SHAP 归因后决定是否升级处置"
 
-# --- 产物路径 ------------------------------------------------------------------
-paths:
-  artifacts: artifacts
-  figures: artifacts/figures
-  results: artifacts/results
+report:
+  supported_types: [monthly, quarterly, custom]
+  default_type: quarterly
+  self_contained: true                   # 自包含 HTML（内嵌 base64，F18）
+  formats: [html, pdf]
+
+llm:
+  backend: rule-template                 # rule-template | llama3 | gpt4（Phase2 切换）
+  mock_max_latency_ms: 1000              # Mock 推理链延迟 ≤1s（§13.4）
+  api_base: ""
+  model: ""
+
+web:
+  map_source: datav-geoatlas             # 合规世界地图（中国标准）
+  max_compare_countries: 5               # 国家对比上限（F12/§7.5 表单验证）
+  year_min: 1990
+  year_max: 2024
+
+security:
+  xss_escape: true                       # 用户输入转义防 XSS（§8.4）

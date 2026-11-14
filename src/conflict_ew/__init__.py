@@ -1,10 +1,9 @@
-"""ConflictEW T-GNN: reproducible research pipeline (config-driven).
+"""ConflictEW 军费冲突早期预警系统 — 核心包。
 
-Turns the browser dashboard prototype into an end-to-end, re-runnable pipeline:
-    data -> Kalman feature extraction -> XGBoost (blocked temporal CV)
-         -> DeLong / bootstrap CIs -> publication vector figures.
-
-All hyperparameters, seeds and paths live in `config.yaml` (see SCI_OPTIMIZATION_PLAN.md).
+三层架构（对齐论文）：
+  1. 数据层：data_fetch / external / data / build_panel（F01-F04）
+  2. 分析引擎：kalman / factors / xgb / shap_analysis / metrics（F05-F09）
+  3. 推理与产品：agent / alerts / report（F15-F18）
 """
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"

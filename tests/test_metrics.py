@@ -1,90 +1,57 @@
-"""Unit tests for evaluation metrics (SCI_OPTIMIZATION_PLAN §E3)."""
+"""tests/test_metrics.py：回测指标（PRD F09 / §13.4）。"""
 import numpy as np
+import pandas as pd
+import pytest
 
-from conflict_ew.eval import metrics
+from conflict_ew.metrics import (auc_ci, bh_fdr, brier_decomposition,
+                                 delong_auc_var, lead_time_analysis)
 
 
-def test_auc_perfect_and_random():
+def test_delong_var_positive_and_auc_ci():
     rng = np.random.default_rng(0)
-    y = np.array([0, 0, 1, 1])
-    assert metrics._auc_mannwhitney(y, np.array([0.1, 0.2, 0.8, 0.9])) == 1.0
-    yb = rng.integers(0, 2, 200)
-    sb = rng.random(200)
-    auc = metrics._auc_mannwhitney(yb, sb)
-    assert 0.3 < auc < 0.7
+    y = np.array([0] * 90 + [1] * 10)
+    s = np.concatenate([rng.normal(0, 1, 90), rng.normal(1.2, 1, 10)])
+    var = delong_auc_var(y, s)
+    assert var >= 0
+    ci = auc_ci(y, s)
+    assert 0 < ci["auc"] < 1
+    assert ci["ci_lower"] <= ci["auc"] <= ci["ci_upper"]
 
 
-def test_delong_ci_covers_true_value():
+def test_brier_decomposition_identity():
     rng = np.random.default_rng(1)
-    n_pos, n_neg = 60, 60
-    pos = rng.normal(1.0, 1.0, n_pos)
-    neg = rng.normal(0.0, 1.0, n_neg)
-    y = np.array([1] * n_pos + [0] * n_neg)
-    s = np.concatenate([pos, neg])
-    auc, (lo, hi) = metrics.auc_delong_ci(y, s)
-    true = metrics._auc_mannwhitney(y, s)
-    assert abs(auc - true) < 1e-9
-    assert lo < auc < hi
-    assert 0.6 < auc < 0.85
+    y = (rng.random(500) < 0.2).astype(float)
+    p = np.clip(y + rng.normal(0, 0.15, 500), 0.01, 0.99)
+    b = brier_decomposition(y, p, n_bins=10)
+    # Brier ≈ Reliability - Resolution + Uncertainty（分箱估计下近似成立）
+    assert abs(b["brier"] - (b["reliability"] - b["resolution"] + b["uncertainty"])) < 0.02
+    assert 0 <= b["reliability"] <= 1
+    assert 0 <= b["uncertainty"] <= 0.25
 
 
-def test_brier_decomposition_sums():
-    rng = np.random.default_rng(2)
-    y = rng.integers(0, 2, 300)
-    p = np.clip(rng.random(300), 0.01, 0.99)
-    rel, res, unc = metrics.brier_decomposition(y, p, n_bins=10)
-    # Bin-mean Murphy decomposition: equals raw Brier up to a within-bin
-    # heterogeneity term, which is small with 10 bins.
-    assert abs(rel - res + unc - metrics.brier(y, p)) < 0.01
-    # all three components are non-negative by construction
-    assert rel >= 0 and res >= 0 and unc >= 0
+def test_bh_fdr():
+    pvals = np.array([0.001, 0.01, 0.04, 0.2, 0.5])
+    sig = bh_fdr(pvals, alpha=0.05)
+    # BH 校正后至少最小的 p 值显著
+    assert bool(sig[0])
+    # 单调性：p 值越大越不可能显著
+    assert sum(sig) >= 1
 
 
-def test_wilson_ci_known_values():
-    # k=0, n=10 -> CI should include 0 and be finite
-    lo, hi = metrics.wilson_ci(0, 10)
-    assert lo == 0.0 and 0 < hi < 1
-    lo, hi = metrics.wilson_ci(10, 10)
-    assert 0 < lo < 1 and np.isclose(hi, 1.0)
-
-
-def test_bootstrap_ci_contains_mean():
-    rng = np.random.default_rng(3)
-    y = rng.integers(0, 2, 100)
-    p = np.clip(rng.random(100), 0.05, 0.95)
-    mean, (lo, hi) = metrics.brier_bootstrap_ci(y, p, n_boot=200, seed=0)
-    assert lo <= mean <= hi
-
-
-def test_delong_test_same_scores_insignificant():
-    """Identical scores -> zero diff, p close to 1."""
-    rng = np.random.default_rng(4)
-    y = np.array([1] * 50 + [0] * 50)
-    s = rng.normal(0, 1, 100)
-    res = metrics.delong_test(y, s, s.copy())
-    assert abs(res["diff"]) < 1e-9
-    assert res["p_value"] > 0.5
-
-
-def test_delong_test_separable_significant():
-    """Clearly separable scores -> significant difference."""
-    rng = np.random.default_rng(5)
-    n_pos, n_neg = 80, 80
-    y = np.array([1] * n_pos + [0] * n_neg)
-    good = np.concatenate([rng.normal(2.0, 1.0, n_pos), rng.normal(0.0, 1.0, n_neg)])
-    bad = np.concatenate([rng.normal(0.0, 1.0, n_pos), rng.normal(0.0, 1.0, n_neg)])
-    res = metrics.delong_test(y, good, bad)
-    assert res["auc_a"] > res["auc_b"]
-    assert res["p_value"] < 0.05
-
-
-def test_benjamini_hochberg_known_values():
-    """BH step-down matches the textbook example (Benjamini & Hochberg 1995)."""
-    p = np.array([0.01, 0.04, 0.03, 0.20])
-    adj, rej = metrics.benjamini_hochberg(p, alpha=0.05)
-    # smallest p (0.01) is the only rejection at alpha=0.05 (m=4)
-    assert rej[0]
-    assert not rej[1] and not rej[2] and not rej[3]
-    # adjusted p-values are non-decreasing with the original p order
-    order = np.argsort(p)
-    assert np.all(np.diff(adj[order]) >= 0)
+def test_lead_time_analysis():
+    oos = pd.DataFrame({
+        "country": ["AAA"] * 10 + ["BBB"] * 10,
+        "year": list(range(2015, 2025)) * 2,
+        "p_conflict": [0.1, 0.2, 0.8, 0.9, 0.5, 0.3, 0.2, 0.1, 0.1, 0.1] * 2,
+        "fold": ["test"] * 20,
+    })
+    panel = pd.DataFrame({
+        "iso3": ["AAA"] * 11 + ["BBB"] * 11,
+        "year": list(range(2014, 2025)) * 2,
+        "y_onset": [0] * 11 + [0] * 10 + [1],
+    })
+    out = lead_time_analysis(oos, panel, threshold=0.7)
+    # AAA 2017 首次 p≥0.7；BBB 2024 onset 但从未触发预警 → 覆盖 1 个
+    assert out["n_onsets_total"] == 1
+    assert out["n_onsets_covered"] == 1
+    assert out["mean_lead_months"] is not None

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>国家详情 · ConflictEW</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav id="topnav" class="topnav"></nav>
+<div class="page">
+  <div id="notfound" style="display:none"></div>
+  <div id="main" style="display:none">
+    <div class="grid three" style="margin-bottom:16px">
+      <div class="card">
+        <h3>国家信息</h3>
+        <div style="font-size:22px;font-weight:800" id="c-name"></div>
+        <div style="color:var(--text-dim);margin-top:6px" id="c-meta"></div>
+        <div style="margin-top:10px;font-size:12.5px;color:var(--text-faint)" id="c-kalman"></div>
+      </div>
+      <div class="card">
+        <h3>冲突风险概率（当前年份）</h3>
+        <div class="chart sm" id="gauge-chart"></div>
+        <div style="text-align:center;margin-top:-6px" id="gauge-label"></div>
+      </div>
+      <div class="card">
+        <h3>年份选择 <span class="hint">1990-2024 · 实时验证</span></h3>
+        <div class="form-row">
+          <input class="input" id="year-input" type="number" min="1990" max="2024" style="width:110px">
+          <button class="btn" id="btn-year">切换年份</button>
+        </div>
+        <div id="year-error" class="form-error"></div>
+        <div style="font-size:12.5px;color:var(--text-faint);margin-top:8px">
+          <b id="hist-risk"></b><br>
+          历史风险：验证折（1999-2014）+ 测试期（2015-2024）模型概率；更早年份无模型输出。
+        </div>
+      </div>
+    </div>
+
+    <div class="grid two">
+      <div class="card" style="margin-bottom:16px">
+        <h3>SHAP 因子归因瀑布图 <span class="hint">hover 显示因子定义 · 正=红(推高风险) 负=绿(压低风险)</span></h3>
+        <div class="chart" id="shap-chart"></div>
+        <div id="shap-note" style="font-size:12px;color:var(--text-faint);margin-top:6px"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <h3>Agent 推理链 <span class="hint" id="chain-backend"></span></h3>
+        <div id="chain-box"><div class="chain-summary">该年份无推理链（模型仅覆盖 1999-2024 的验证/测试期）</div></div>
+        <div id="checklist-box"></div>
+        <div class="disclaimer" id="disclaimer"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>军费趋势与 Kalman 异常信号 <span class="hint">log 军费 + e*（|e*|≥2 红点标记）· 年份范围筛选</span></h3>
+      <div class="form-row">
+        <label>起</label><input class="input" id="tr-start" type="number" min="1970" max="2024" style="width:90px">
+        <label>止</label><input class="input" id="tr-end" type="number" min="1970" max="2024" style="width:90px">
+        <button class="btn ghost" id="btn-range">应用范围</button>
+      </div>
+      <div class="chart lg" id="trend-chart"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>2025-2030 未来风险预测 <span class="hint">历史 OOS 概率 + 趋势外推 · source/confidence 分层标注 · 需连接 server.py</span></h3>
+      <div class="chart lg" id="forecast-chart"></div>
+      <div id="forecast-meta" style="font-size:12px;color:var(--text-faint);margin-top:6px"></div>
+    </div>
+
+    <div style="margin-top:16px;text-align:right">
+      <a class="btn ghost" href="visualize.html">在可视化中心对比更多国家 →</a>
+    </div>
+  </div>
+  <div class="footer">P04 国家详情 · 概率含 95% CI · 高风险（p≥0.7）红色高亮并附人工复核核查清单</div>
+</div>
+
+<script src="vendor/echarts.min.js?v=20260826"></script>
+<script src="data/app_data.js?v=20260826"></script>
+<script src="js/common.js?v=20260826"></script>
+<script>
+(function () {
+  "use strict";
+  renderNav("country.html");
+  if (!hasData()) { renderNoData(document.querySelector(".page")); return; }
+  var d = D();
+  var iso = (q("c") || "").toUpperCase();
+  var meta = countryByIso(iso);
+  if (!meta) {
+    document.getElementById("notfound").style.display = "block";
+    document.getElementById("notfound").innerHTML =
+      '<div class="card" style="text-align:center;padding:50px"><h3>未找到国家</h3>' +
+      '<p style="color:var(--text-dim);margin:10px 0 20px">ISO3 编码：' + esc(iso) + "</p>" +
+      '<a class="btn" href="index.html">返回仪表盘</a></div>';
+    return;
+  }
+
+  var main = document.getElementById("main");
+  main.style.display = "block";
+  var maxYear = Math.max.apply(null, d.predictions.map(function (p) { return p.year; }));
+  var year = parseInt(q("y", maxYear), 10) || maxYear;
+  if (year < 1990) year = 1990; if (year > 2024) year = 2024;
+
+  // ---------- 国家信息 ----------
+  document.getElementById("c-name").textContent = meta.name_zh;
+  document.getElementById("c-meta").textContent =
+    meta.name_en + " · " + iso + (meta.region ? " · " + meta.region : "");
+  var kp = d.kalmanParams.find(function (x) { return x.iso3 === iso; });
+  if (kp) {
+    document.getElementById("c-kalman").textContent =
+      "Kalman LLT 参数：σ²ε=" + kp.sigma2_eps + " · σ²η=" + kp.sigma2_eta + " · σ²ζ=" + kp.sigma2_zeta;
+  }
+
+  // ---------- 当前年份风险 ----------
+  function getPred(iso3, yr) {
+    return d.predictions.find(function (p) { return p.country === iso3 && p.year === yr; }) || null;
+  }
+  function getHistPred(iso3, yr) {
+    return d.predHistory.find(function (p) { return p.country === iso3 && p.year === yr; }) || null;
+  }
+  var cur = getPred(iso, year) || getHistPred(iso, year);
+
+  var gaugeChart = null;
+  function renderGauge() {
+    var el = document.getElementById("gauge-chart");
+    if (!gaugeChart) gaugeChart = initChart(el);
+    if (!gaugeChart) return;
+    var p = cur ? cur.p_conflict : null;
+    var lv = riskLevel(p);
+    setChartOpt(gaugeChart, {
+      series: [{
+        type: "gauge", min: 0, max: 1, startAngle: 210, endAngle: -30, radius: "92%",
+        progress: { show: true, width: 14, itemStyle: { color: riskColor[lv] } },
+        axisLine: { lineStyle: { width: 14, color: [
+          [0.5, "#4bbf7a"], [0.7, "#e8934a"], [1, "#e05a5a"]
+        ] } },
+        axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false }, pointer: { show: false },
+        anchor: { show: false },
+        detail: {
+          valueAnimation: true, offsetCenter: [0, "12%"],
+          formatter: p === null ? "—" : p.toFixed(3),
+          color: riskColor[lv], fontSize: 30, fontWeight: 800
+        },
+        title: { offsetCenter: [0, "38%"], color: "#93a1b8", fontSize: 12 },
+        data: [{ value: p === null ? 0 : p, name: (p === null ? "无模型输出" : riskLabel[lv]) }]
+      }]
+    });
+    var label = document.getElementById("gauge-label");
+    if (cur) {
+      label.innerHTML = pBadge(p) + ' <span style="color:var(--text-faint);font-size:12px">95% CI [' +
+        (cur.lo !== undefined ? cur.lo.toFixed(3) : "—") + ", " + (cur.hi !== undefined ? cur.hi.toFixed(3) : "—") + "] · " +
+        esc(cur.region || "") + "</span>";
+      if (lv === "high") {
+        label.innerHTML += '<div style="margin-top:8px;color:var(--red);font-weight:600">⚠ 高风险：进入人工复核流程（核查清单见右侧）</div>';
+      }
+    } else {
+      label.innerHTML = '<span style="color:var(--text-faint)">该年份无模型概率输出</span>';
+    }
+    document.getElementById("hist-risk").textContent =
+      "当前展示：" + year + " 年" + (cur ? "（风险概率 " + cur.p_conflict.toFixed(3) + "）" : "（无模型输出）");
+  }
+
+  // ---------- 年份选择器验证（PRD §7.4：整数 1990-2024，实时验证） ----------
+  var yearInput = document.getElementById("year-input");
+  yearInput.value = year;
+  yearInput.addEventListener("input", function () {
+    var v = parseInt(yearInput.value, 10);
+    var err = document.getElementById("year-error");
+    if (!Number.isInteger(v) || v < 1990 || v > 2024) {
+      err.textContent = "年份需为 1990-2024 的整数";
+    } else {
+      err.textContent = "";
+    }
+  });
+  document.getElementById("btn-year").addEventListener("click", function () {
+    var v = parseInt(yearInput.value, 10);
+    if (!Number.isInteger(v) || v < 1990 || v > 2024) {
+      document.getElementById("year-error").textContent = "年份需为 1990-2024 的整数";
+      return;
+    }
+    history.replaceState(null, "", "country.html?c=" + iso + "&y=" + v);
+    year = v;
+    refresh();
+  });
+
+  // ---------- SHAP 瀑布 ----------
+  var shapChart = null;
+  function renderShap() {
+    var el = document.getElementById("shap-chart");
+    if (!shapChart) shapChart = initChart(el);
+    if (!shapChart) return;
+    var sv = (d.shap[iso] || {})[year];
+    if (!sv) {
+      el.innerHTML = '<div class="empty">该年份无 SHAP 归因（模型输出覆盖 2015-2024；历史年份请切换至测试期）</div>';
+      return;
+    }
+    var fnames = {};
+    (d.factorRegistry || []).forEach(function (f) { fnames[f.id] = f.name; });
+    var items = Object.keys(sv).map(function (fid) {
+      return { name: fid + " " + (fnames[fid] || ""), value: sv[fid], fid: fid };
+    }).sort(function (a, b) { return a.value - b.value; });
+    var base = 0; // 起点
+    var cum = base;
+    var data = items.map(function (it) {
+      var seg = { start: cum, end: cum + it.value, item: it };
+      cum = seg.end;
+      return seg;
+    });
+    var p = cur ? cur.p_conflict : null;
+    var target = p === null ? null : Math.log(p / (1 - p));
+    var note = document.getElementById("shap-note");
+    note.innerHTML = items.map(function (it) {
+      return '<span class="tag ' + (Math.abs(sv[it.fid]) >= 0.05 ? "" : "warn") + '">' +
+        esc(it.fid) + (Math.abs(sv[it.fid]) < 0.05 ? " 非实质" : "") + "</span>";
+    }).join("");
+    setChartOpt(shapChart, {
+      grid: { left: 120, right: 60, top: 20, bottom: 30 },
+      xAxis: { type: "value", name: "logit(p)", nameLocation: "middle", nameGap: 26 },
+      yAxis: { type: "category", data: items.map(function (i) { return i.name; }), axisLabel: { fontSize: 11.5 } },
+      series: [{
+        type: "custom",
+        renderItem: function (params, api) {
+          var idx = api.value(0);
+          var seg = data[idx];
+          var y = api.coord([0, idx])[1];
+          var x0 = api.coord([Math.min(seg.start, seg.end), 0])[0];
+          var x1 = api.coord([Math.max(seg.start, seg.end), 0])[0];
+          var h = api.size([0, 1])[1] * 0.55;
+          var pos = seg.end >= seg.start;
+          return {
+            type: "rect",
+            shape: { x: x0, y: y - h / 2, width: Math.max(x1 - x0, 2), height: h },
+            style: api.style({ fill: pos ? "#e05a5a" : "#4bbf7a" })
+          };
+        },
+        encode: { x: 0, y: 1 },
+        data: items.map(function (it, i) { return [i, it.value]; }),
+        tooltip: {
+          formatter: function (pp) {
+            var it = items[pp.dataIndex];
+            var seg = data[pp.dataIndex];
+            var desc = (fnames[it.fid] || "");
+            var defs = {};
+            (d.factorRegistry || []).forEach(function (f) { defs[f.id] = f.description; });
+            return "<b>" + esc(it.name) + "</b><br/>SHAP 贡献：" + it.value.toFixed(4) +
+              "<br/>" + esc(defs[it.fid] || "") +
+              "<br/><span style='color:var(--text-faint)'>" + (it.value >= 0 ? "推高风险" : "压低风险") + "</span>";
+          }
+        }
+      }, {
+        type: "scatter",
+        data: target === null ? [] : [[target, items.length - 0.5]],
+        symbol: "diamond", symbolSize: 12, itemStyle: { color: "#4d8dff" },
+        tooltip: { formatter: "logit(p) = " + target.toFixed(4) }
+      }]
+    });
+  }
+
+  // ---------- 推理链 ----------
+  function renderChain() {
+    var chains = loadChains();
+    var chain = chains.find(function (c) { return c.country === iso && c.year === year; }) || null;
+    var box = document.getElementById("chain-box");
+    document.getElementById("chain-backend").textContent = chain ? "后端: " + chain.backend : "";
+    if (!chain) {
+      box.innerHTML = '<div class="chain-summary">该年份无推理链（推理链覆盖模型验证/测试期年份）。' +
+        (year < 2015 ? " 可切换到 2015-2024 查看。" : "") + "</div>";
+      document.getElementById("checklist-box").innerHTML = "";
+      document.getElementById("disclaimer").textContent = "";
+      return;
+    }
+    var steps = chain.steps.map(function (s) {
+      return '<div class="chain-step"><div><span class="fname">' + esc(s.factor_id) + " " + esc(s.factor_name) + "</span>" +
+        ' <span class="contrib ' + (s.shap_contribution >= 0 ? "pos" : "neg") + '">贡献 ' +
+        (s.shap_contribution >= 0 ? "+" : "") + s.shap_contribution.toFixed(3) + "</span>" +
+        (s.is_substantial ? "" : ' <span class="tag warn">非实质</span>') +
+        ' <span class="tag">' + esc(s.observation_period || "") + "</span></div>" +
+        '<div class="stmt">' + esc(s.statement) + "</div></div>";
+    }).join("");
+    box.innerHTML = '<ol style="margin:0 0 0 18px;padding:0">' + steps + "</ol>" +
+      '<div class="chain-summary">' + esc(chain.summary) + "</div>";
+    var cl = chain.checklist || [];
+    document.getElementById("checklist-box").innerHTML = cl.length ?
+      '<div class="card" style="background:var(--red-soft);border-color:rgba(224,90,90,.35)"><b style="color:var(--red)">人工复核核查清单：</b>' +
+      "<ul style='margin:8px 0 0 18px'>" + cl.map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("") + "</ul></div>" : "";
+    document.getElementById("disclaimer").textContent = chain.disclaimer || "";
+  }
+  function loadChains() {
+    // 推理链通过 summary 内嵌在 alerts/预测中；这里用 predHistory + shap 重建关键语句
+    // 完整推理链 JSON 在 artifacts/reasoning_chains.json（后端）；前端基于 SHAP 重建展示
+    var chains = [];
+    var fnames = {};
+    (d.factorRegistry || []).forEach(function (f) { fnames[f.id] = f.name; });
+    var defs = {};
+    (d.factorRegistry || []).forEach(function (f) { defs[f.id] = f.description; });
+    var sv = (d.shap[iso] || {})[year];
+    var pr = getPred(iso, year) || getHistPred(iso, year);
+    if (sv && pr) {
+      var steps = Object.keys(sv).map(function (fid) {
+        return { factor_id: fid, factor_name: fnames[fid], shap_contribution: sv[fid],
+                 is_substantial: Math.abs(sv[fid]) >= 0.05, observation_period: "截至 " + year + " 年",
+                 statement: (sv[fid] >= 0 ? "推高风险" : "压低风险") + "（贡献 " + (sv[fid] >= 0 ? "+" : "") + sv[fid].toFixed(3) + "）：" + (defs[fid] || "") };
+      }).sort(function (a, b) { return Math.abs(b.shap_contribution) - Math.abs(a.shap_contribution); });
+      var lv = riskLevel(pr.p_conflict);
+      var summary = iso + " " + year + " 年冲突风险概率 " + pr.p_conflict.toFixed(2) +
+        "，判定为" + riskLabel[lv] + "。主要驱动因子：" +
+        steps.slice(0, 3).map(function (s) { return s.factor_name + "(" + (s.shap_contribution >= 0 ? "+" : "") + s.shap_contribution.toFixed(3) + ")"; }).join("；") + "。";
+      chains.push({
+        country: iso, year: year, probability: pr.p_conflict, risk_level: lv, backend: "rule-template",
+        steps: steps, summary: summary,
+        checklist: lv === "high" ? ["核验军费异常信号 e* 是否连续 ≥2 年超过 2σ", "检查邻国军费增速差是否持续为正（军备竞赛迹象）", "复核经济压力因子（GDP 增速下滑 / 通胀高企 / 失业上升）", "确认政治不稳信号（Polity 变化 / V-Dem LDI 变化）", "核对领土争端（ICOW）与同盟变更（ATOP）事件", "人工复核概率与 SHAP 归因后决定是否升级处置"] : [],
+        disclaimer: "概率化输出+显式不确定性：本系统不输出政治判断或军事行动建议，部署判断权归人。"
+      });
+    }
+    return chains;
+  }
+
+  // ---------- 趋势图 ----------
+  var trendChart = null;
+  function renderTrend() {
+    var el = document.getElementById("trend-chart");
+    if (!trendChart) trendChart = initChart(el);
+    if (!trendChart) return;
+    var tr = d.trends[iso];
+    if (!tr) { el.innerHTML = '<div class="empty">该国无趋势数据</div>'; return; }
+    var s = parseInt(document.getElementById("tr-start").value, 10);
+    var e = parseInt(document.getElementById("tr-end").value, 10);
+    var idxs = [];
+    tr.years.forEach(function (y, i) { if (y >= s && y <= e) idxs.push(i); });
+    var years = idxs.map(function (i) { return tr.years[i]; });
+    var mil = idxs.map(function (i) { return tr.mil[i]; });
+    var earr = idxs.map(function (i) { return tr.e[i]; });
+    var anom = idxs.map(function (i) { return tr.anom[i]; });
+    var anomPts = [];
+    anom.forEach(function (a, i) { if (a === 1 && earr[i] !== null && earr[i] !== undefined) anomPts.push([years[i], earr[i]]); });
+    setChartOpt(trendChart, {
+      grid: { top: 60, left: 70, right: 60, bottom: 40 },
+      legend: { data: ["log 军费支出", "Kalman 异常信号 e*"], top: 10 },
+      xAxis: { type: "category", data: years, name: "年份" },
+      yAxis: [
+        { type: "value", name: "log(军费 US$)", scale: true },
+        { type: "value", name: "e*", scale: true, splitLine: { show: false } }
+      ],
+      series: [
+        { name: "log 军费支出", type: "line", data: mil, smooth: true, showSymbol: false,
+          lineStyle: { width: 2, color: "#4d8dff" }, itemStyle: { color: "#4d8dff" },
+          connectNulls: false, areaStyle: { opacity: 0.08, color: "#4d8dff" } },
+        { name: "Kalman 异常信号 e*", type: "line", yAxisIndex: 1, data: earr,
+          showSymbol: true, symbolSize: 5, lineStyle: { width: 1.4, color: "#d9c04e", opacity: 0.8 },
+          itemStyle: { color: "#d9c04e" },
+          markLine: { silent: true, symbol: "none", lineStyle: { color: "#e05a5a", type: "dashed", width: 1 },
+            data: [{ yAxis: 2 }, { yAxis: -2 }], label: { show: false } },
+          markPoint: {
+            symbol: "pin", symbolSize: 34, itemStyle: { color: "#e05a5a" },
+            data: anomPts.slice(0, 30).map(function (pt) { return { coord: pt, value: "异常" }; }),
+            label: { show: false }
+          }
+        }
+      ],
+      tooltip: { trigger: "axis" }
+    });
+  }
+
+  // ---------- 未来预测（2025-2030，API 优先 / 静态降级）----------
+  var forecastChart = null;
+  var FORECAST_LABELS = {
+    "imf-estimate": "2025 IMF 估计",
+    "imf-projection": "2026 IMF 预测",
+    "trend-extrapolation": "2027-2030 趋势外推"
+  };
+  function renderForecast() {
+    var el = document.getElementById("forecast-chart");
+    if (!forecastChart) forecastChart = initChart(el);
+    if (!forecastChart) return;
+    var meta = document.getElementById("forecast-meta");
+    // 历史 OOS 概率（测试期 2015-2024）
+    var hist = d.predictions.filter(function (p) { return p.country === iso && p.year >= 2015; })
+      .sort(function (a, b) { return a.year - b.year; });
+    var cat = hist.map(function (p) { return p.year; });
+    var histVals = hist.map(function (p) { return p.p_conflict; });
+    var baseOpt = {
+      grid: { top: 70, left: 70, right: 50, bottom: 40 },
+      legend: { top: 8, data: ["历史 OOS 概率", "未来预测"] },
+      tooltip: { trigger: "axis" },
+      xAxis: { type: "category", data: cat, name: "年份" },
+      yAxis: { type: "value", min: 0, max: 1, name: "冲突风险概率" },
+      series: [{
+        name: "历史 OOS 概率", type: "line", data: histVals, smooth: true,
+        showSymbol: true, symbolSize: 5, lineStyle: { width: 2, color: "#4d8dff" },
+        itemStyle: { color: "#4d8dff" }, connectNulls: true,
+        markLine: { silent: true, symbol: "none", lineStyle: { type: "dashed", color: "#e05a5a", width: 1 },
+          data: [{ yAxis: 0.7 }, { yAxis: 0.5 }], label: { show: false } }
+      }]
+    };
+    // 未来部分：API 异步（file:// 或服务器不可用时降级提示）
+    if (window.CEW && CEW.api && !location.protocol.startsWith("file")) {
+      CEW.api.get("forecast", { country: iso }).then(function (fc) {
+        var fut = (fc.points || []).map(function (p) {
+          return { year: p.year, v: p.p_conflict.value, src: p.p_conflict.source, conf: p.p_conflict.confidence };
+        });
+        if (!fut.length) { meta.textContent = "该国家无未来预测数据（历史军费覆盖不足）。"; return; }
+        var cat2 = cat.concat(fut.map(function (x) { return x.year; }));
+        var futVals = fut.map(function (x) { return x.v; });
+        setChartOpt(forecastChart, utilDeep(baseOpt, {
+          xAxis: { data: cat2 },
+          series: [baseOpt.series[0], {
+            name: "未来预测", type: "line", data: futVals, smooth: true,
+            showSymbol: true, symbolSize: 6, symbol: "emptyCircle",
+            lineStyle: { width: 2, type: "dashed", color: "#e8934a" },
+            itemStyle: { color: "#e8934a" },
+            areaStyle: { opacity: 0.16, color: "#e8934a" },
+            markArea: { silent: true, itemStyle: { color: "rgba(232,147,74,.07)" },
+              data: [[{ xAxis: 2025 }, { xAxis: 2030 }]] }
+          }],
+          tooltip: {
+            formatter: function (ps) {
+              var out = "<b>" + esc(countryName(iso)) + " " + ps[0].axisValue + " 年</b><br/>";
+              ps.forEach(function (p) {
+                if (p.seriesName === "历史 OOS 概率") {
+                  out += esc(p.seriesName) + "：" + (p.value === null || p.value === undefined ? "—" : p.value.toFixed(3)) + "<br/>";
+                } else {
+                  var f = fut[p.dataIndex] || {};
+                  out += esc(p.seriesName) + "：" + (p.value === null ? "—" : p.value.toFixed(3)) +
+                    "<br/><span style='color:var(--text-faint)'>来源：" + esc(f.src || "—") +
+                    " · 置信度 " + (f.conf !== undefined ? (f.conf * 100).toFixed(0) + "%" : "—") + "</span><br/>";
+                }
+              });
+              return out;
+            }
+          }
+        }));
+        meta.innerHTML = "分层方法：<b>2025</b> IMF 估计（conf 0.60）→ <b>2026</b> IMF 预测（0.50）→ <b>2027-2030</b> 历史趋势外推 + XGBoost 打分（0.42→0.25 递减）· 虚线=预测期，橙色阴影=置信度带宽";
+      }).catch(function (err) {
+        meta.textContent = "未来预测加载失败：" + (err && err.message ? err.message : err) + "（请确认 server.py 正在运行）";
+        setChartOpt(forecastChart, baseOpt);
+      });
+    } else {
+      meta.textContent = "静态模式（file:// 或未连接 server.py）：仅显示历史 OOS 概率。运行 python server.py 并访问 http://127.0.0.1:8000/country.html 可查看 2025-2030 未来预测。";
+      setChartOpt(forecastChart, baseOpt);
+    }
+  }
+  function utilDeep(dst, src) {
+    return CEW ? CEW.util.deepMerge(JSON.parse(JSON.stringify(dst)), src) : Object.assign({}, dst, src);
+  }
+
+  function refresh() {
+    cur = getPred(iso, year) || getHistPred(iso, year);
+    renderGauge(); renderShap(); renderChain(); renderTrend();
+  }
+  // 年份范围默认
+  var tr = d.trends[iso];
+  document.getElementById("tr-start").value = tr ? tr.years[0] : 1970;
+  document.getElementById("tr-end").value = tr ? tr.years[tr.years.length - 1] : 2024;
+  document.getElementById("btn-range").addEventListener("click", function () {
+    var s = parseInt(document.getElementById("tr-start").value, 10);
+    var e = parseInt(document.getElementById("tr-end").value, 10);
+    if (!Number.isInteger(s) || !Number.isInteger(e) || s > e) {
+      alert("年份范围无效：需为整数且 start≤end");
+      return;
+    }
+    renderTrend();
+  });
+  refresh();
+  renderForecast();
+})();
+</script>
+</body>
+</html>

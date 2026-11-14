@@ -1,0 +1,11 @@
+{
+  "n_rows": 8505,
+  "n_countries": 165,
+  "n_positive": 267,
+  "positive_rate": 0.0314,
+  "n_excluded_short": 0,
+  "excluded_countries": [],
+  "orphan_rows": 0,
+  "issues": [],
+  "passed": true
+}

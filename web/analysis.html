@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>风险预测分析 · ConflictEW</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav id="topnav" class="topnav"></nav>
+<div class="page">
+  <h1 class="page-title">风险预测分析</h1>
+  <p class="page-sub">模型架构 · 回测指标（AUC/Brier/Recall）· 基准对比 · 消融实验 · SHAP 归因（F05-F09）</p>
+
+  <div class="card" style="margin-bottom:16px">
+    <h3>三层模型架构 <span class="hint">论文《Multi-Indicator Conflict Early Warning: A Kalman Filter Approach...》</span></h3>
+    <div id="arch-chart" class="chart lg" style="height:380px"></div>
+  </div>
+
+  <div class="grid cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:16px" id="kpis"></div>
+
+  <div class="grid two">
+    <div class="card" style="margin-bottom:16px">
+      <h3>基准对比 <span class="hint">测试期 2015-2024 · bootstrap 差异检验 + FDR 校正</span></h3>
+      <div id="baseline-box"></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h3>消融实验 A1-A4 <span class="hint">同一 blocked CV 协议 · 点击行展开因子贡献</span></h3>
+      <div id="ablation-box"></div>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <h3>SHAP 全局因子重要性 <span class="hint">|SHAP| 均值 · 导出数据集</span></h3>
+      <div class="chart" id="shap-imp-chart"></div>
+      <div style="margin-top:8px">
+        <button class="btn ghost" id="btn-export-shap">导出 SHAP 数据集（CSV）</button>
+        <span style="margin-left:10px;font-size:12px;color:var(--text-faint)">shap_values.csv：country, year, factor_id, shap_value, is_substantial</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>CV 折回测（blocked expanding-window）<span class="hint">训练截止&lt;验证起点&lt;测试 2015（F07 验收）</span></h3>
+      <table class="tbl" id="cv-table">
+        <tr><th>折</th><th>训练期</th><th>验证期</th><th class="num">AUC</th><th class="num">scale_pos_weight</th></tr>
+      </table>
+      <div style="margin-top:12px;font-size:12.5px;color:var(--text-faint)" id="shap-local"></div>
+    </div>
+  </div>
+
+  <div class="footer">回测协议：blocked expanding-window CV，测试期仅访问一次；阈值/校准仅在训练期拟合（§8.2 防泄漏）。</div>
+</div>
+
+<script src="vendor/echarts.min.js?v=20260826"></script>
+<script src="data/app_data.js?v=20260826"></script>
+<script src="js/common.js?v=20260826"></script>
+<script>
+(function () {
+  "use strict";
+  // 顶层 try/catch：任何抛错都在页面顶部显示具体异常（避免"完全空白"无线索）
+  var _page = document.querySelector(".page");
+  try {
+  renderNav("analysis.html");
+  if (!hasData()) { renderNoData(_page); return; }
+  var d = D();
+  var m = d.metrics;
+
+  // ---------- 三层架构图（横向 4 列 · 自适应矩形节点）----------
+  (function () {
+    var el = document.getElementById("arch-chart");
+    var chart = initChart(el); if (!chart) return;
+    // 节点用矩形 [width, height] 自适应多行文字；y 轴 max 给节点预留边距
+    var NW = 180, NH = 78;  // 节点宽高
+    var nodes = [
+      { name: "军费时间序列\n(SIPRI/WDI 160+ 国)",                x: 110, y: 80,  lvl: 1 },
+      { name: "Kalman LLT 滤波\n异常信号 e*（|e*|≥2）",          x: 110, y: 230, lvl: 1 },
+      { name: "外部数据\nCOW / Polity / ICOW / ATOP",            x: 340, y: 80,  lvl: 1 },
+      { name: "6 因子特征\nF1 军费异常 / F2 军备 / F3 经济 /\nF4 政治 / F5 领土 / F6 同盟", x: 340, y: 230, lvl: 2 },
+      { name: "XGBoost 评分\nblocked CV + 稀有事件校正",         x: 580, y: 80,  lvl: 2 },
+      { name: "OOS 概率 + 95% CI\n2015-2024 测试期",             x: 820, y: 80,  lvl: 3 },
+      { name: "SHAP 归因\n局部精度 <1e-6",                       x: 580, y: 230, lvl: 3 },
+      { name: "Agent 推理链\n规则模板 Mock",                     x: 820, y: 230, lvl: 3 },
+    ];
+    var lvlColors = { 1: "#4d8dff", 2: "#e8934a", 3: "#4bbf7a" };
+    var links = [
+      [0, 1, "时序对齐"], [2, 3, "统一 schema"], [1, 3, "e* 输入"],
+      [3, 4, "特征矩阵"], [4, 5, "预测概率"], [4, 6, "解释"],
+      [5, 7, "概率 →"], [6, 7, "归因 →"]
+    ];
+    setChartOpt(chart, {
+      xAxis: { show: false, min: 0, max: 980 }, yAxis: { show: false, min: 0, max: 330 },
+      series: [
+        {
+          type: "graph", layout: "none", roam: false,
+          // 矩形节点：[宽, 高] 自适应容纳 2-4 行文字
+          data: nodes.map(function (n) {
+            return {
+              name: n.name, x: n.x, y: n.y,
+              symbolSize: [NW, NH],
+              itemStyle: { color: "rgba(35,46,72,0.85)", borderColor: lvlColors[n.lvl] || "#4d8dff", borderWidth: 1.8 },
+              label: { show: true, position: "inside", fontSize: 11.5, color: "#e6ecf5", lineHeight: 15 }
+            };
+          }),
+          links: links.map(function (l) {
+            return {
+              source: nodes[l[0]].name, target: nodes[l[1]].name,
+              label: {
+                show: !!l[2], formatter: l[2], fontSize: 10, color: "#93a1b8",
+                // 边标签背景：避免与边线/箭头混在一起
+                backgroundColor: "rgba(15,20,32,0.75)", padding: [2, 4]
+              },
+              symbol: ["none", "arrow"], symbolSize: 8,
+              lineStyle: { color: "#3d5078", width: 1.4, curveness: 0.1 }
+            };
+          }),
+          emphasis: { focus: "adjacency", itemStyle: { color: "#1c2438" } }
+        }
+      ],
+      tooltip: { show: false }
+    });
+  })();
+
+  // ---------- 回测指标卡片 ----------
+  var auc = m.auc || {}, br = m.brier || {}, rec = m.recall || {}, pre = m.precision || {}, lt = m.lead_time || {};
+  var recS = m.recall_at_suggested || {}, preS = m.precision_at_suggested || {}, ltS = m.lead_time_at_suggested || {};
+  var sug = m.suggested_threshold || {};
+  var kpis = [
+    ["样本外 AUC", auc.auc === null || auc.auc === undefined ? "—" : auc.auc.toFixed(4),
+      "DeLong 95% CI [" + (auc.ci_lower || "—") + ", " + (auc.ci_upper || "—") + "]", "blue"],
+    ["Recall @0.7", rec.value === undefined ? "—" : rec.value.toFixed(3),
+      "运行阈值 0.7 口径", "red"],
+    ["Recall @建议阈值", recS.value === undefined ? "—" : recS.value.toFixed(3),
+      "训练期 Fβ=2 建议阈值 " + (sug.value === undefined ? "—" : sug.value.toFixed(3)) + "（防泄漏选择）", "orange"],
+    ["Precision @0.7", pre.value === undefined ? "—" : pre.value.toFixed(3),
+      "运行阈值 0.7 口径", "orange"],
+    ["Brier Score", br.brier === undefined ? "—" : br.brier.toFixed(4),
+      "Reliability " + (br.reliability === undefined ? "—" : br.reliability.toFixed(4)) + " · Resolution " + (br.resolution === undefined ? "—" : br.resolution.toFixed(4)), "green"],
+    ["预警提前量", ltS.mean_lead_months === null || ltS.mean_lead_months === undefined ? "—" : ltS.mean_lead_months.toFixed(1) + " 个月",
+      "@建议阈值 · onset 覆盖率 " + (ltS.coverage_rate === null || ltS.coverage_rate === undefined ? "—" : (ltS.coverage_rate * 100).toFixed(0) + "%"), "blue"],
+  ];
+  document.getElementById("kpis").innerHTML = kpis.map(function (k) {
+    return '<div class="card kpi"><span class="label">' + k[0] + '</span><span class="value ' + k[3] + '">' + esc(k[1]) +
+      '</span><span class="sub">' + esc(k[2]) + "</span></div>";
+  }).join("");
+
+  // ---------- 基准对比 ----------
+  var rows = "";
+  (m.baseline_comparison || []).forEach(function (b) {
+    var sig = b.fdr_significant ? '<span class="tag warn">FDR 显著</span>' : '<span class="tag">未显著</span>';
+    rows += '<tr><td><b>' + esc(b.baseline) + "</b><br><span style='font-size:11.5px;color:var(--text-faint)'>" +
+      esc((m.baselines || {})[b.baseline] ? (m.baselines[b.baseline].label || "") : "") + "</span></td>" +
+      '<td class="num">' + (b.diff === null || b.diff === undefined ? "—" : b.diff.toFixed(4)) + "</td>" +
+      '<td class="num">' + (b.p_value === null || b.p_value === undefined ? "—" : b.p_value.toFixed(4)) + "</td>" +
+      "<td>" + sig + "</td></tr>";
+  });
+  document.getElementById("baseline-box").innerHTML =
+    "<table class='tbl'><tr><th>基准</th><th class='num'>AUC 差（主-基准）</th><th class='num'>p 值</th><th>结论</th></tr>" + rows +
+    "</table><div style='margin-top:8px;font-size:12px;color:var(--text-faint)'>差异检验：bootstrap " + (m.bootstrap_n || 1000) +
+    " 次 · FDR α=" + (m.fdr_alpha || 0.05) + "（Benjamini-Hochberg）</div>";
+
+  // ---------- 消融 ----------
+  var arows = "";
+  (m.ablation || []).forEach(function (a) {
+    var aucTxt = a.test_auc === null || a.test_auc === undefined ? "失败（降级）" : a.test_auc.toFixed(4);
+    var delta = (a.test_auc !== null && a.test_auc !== undefined && m.auc && m.auc.auc) ?
+      (a.test_auc - m.auc.auc).toFixed(4) : "—";
+    arows += '<tr class="ab-row" data-idx="' + esc(a.ablation) + '"><td><b>' + esc(a.label) + "</b>" +
+      "<br><span style='font-size:11.5px;color:var(--text-faint)'>特征数 " + a.n_feats + "</span></td>" +
+      '<td class="num" style="font-weight:700">' + aucTxt + '</td><td class="num">' + delta + "</td></tr>" +
+      '<tr class="ab-detail" id="ab-' + esc(a.ablation) + '" style="display:none"><td colspan="3" style="color:var(--text-dim);font-size:12.5px">' +
+      "<b>移除/保留的特征：</b>" + esc(JSON.stringify(a.drop || a.keep_only || [])) + "</td></tr>";
+  });
+  document.getElementById("ablation-box").innerHTML =
+    "<table class='tbl'><tr><th>档位</th><th class='num'>测试期 AUC</th><th class='num'>ΔAUC vs 全特征</th></tr>" + arows + "</table>";
+  document.querySelectorAll(".ab-row").forEach(function (tr) {
+    tr.addEventListener("click", function () {
+      var id = "ab-" + tr.getAttribute("data-idx");
+      var detail = document.getElementById(id);
+      detail.style.display = detail.style.display === "none" ? "" : "none";
+    });
+  });
+
+  // ---------- CV 折 ----------
+  var cvRows = "";
+  (m.cv_folds || []).forEach(function (f) {
+    cvRows += "<tr><td>" + esc(f.fold) + "</td><td>" + f.train_start + "-" + f.train_end + "</td><td>" +
+      (f.val_start === null ? "—（全量训练）" : f.val_start + "-" + f.val_end) + "</td>" +
+      '<td class="num">' + (f.auc_val === f.auc_val ? f.auc_val.toFixed(4) : "—") + "</td>" +
+      '<td class="num">' + (f.params && f.params.scale_pos_weight !== undefined ? f.params.scale_pos_weight.toFixed(1) : "—") + "</td></tr>";
+  });
+  document.getElementById("cv-table").innerHTML =
+    "<tr><th>折</th><th>训练期</th><th>验证期</th><th class='num'>AUC</th><th class='num'>scale_pos_weight</th></tr>" + cvRows;
+
+  // ---------- SHAP 局部精度 ----------
+  var sla = (d.shapImportance.length ? "" : "");
+  var localNote = "SHAP 局部精度校验：请查看 artifacts/shap_values.csv 与 run-log（φ₀+Σφⱼ=logit(p)，容差<1e-6）";
+  document.getElementById("shap-local").textContent = localNote;
+
+  // ---------- SHAP 重要性图 ----------
+  (function () {
+    var el = document.getElementById("shap-imp-chart");
+    var chart = initChart(el); if (!chart) return;
+    var imp = d.shapImportance.slice().sort(function (a, b) { return b.mean_abs - a.mean_abs; });
+    var fnames = {};
+    (d.factorRegistry || []).forEach(function (f) { fnames[f.id] = f.name; });
+    setChartOpt(chart, {
+      grid: { left: 90, right: 40, top: 20, bottom: 30 },
+      xAxis: { type: "value", name: "|SHAP| 均值" },
+      yAxis: { type: "category", data: imp.map(function (i) { return i.factor_id + " " + (fnames[i.factor_id] || ""); }) },
+      series: [{
+        type: "bar", data: imp.map(function (i) { return i.mean_abs; }),
+        itemStyle: { color: "#4d8dff" }, label: { show: true, position: "right", color: "#93a1b8", fontSize: 11 }
+      }],
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } }
+    });
+  })();
+
+  // ---------- 导出 SHAP 数据集 ----------
+  document.getElementById("btn-export-shap").addEventListener("click", function () {
+    var rows = [["country", "year", "factor_id", "shap_value", "is_substantial"]];
+    // 从 shap 矩阵重建长表
+    var out = [];
+    Object.keys(d.shap).forEach(function (iso) {
+      Object.keys(d.shap[iso]).forEach(function (yr) {
+        var f = d.shap[iso][yr];
+        Object.keys(f).forEach(function (fid) {
+          out.push([iso, yr, fid, f[fid], Math.abs(f[fid]) >= 0.05 ? 1 : 0]);
+        });
+      });
+    });
+    var csv = rows.concat(out).map(function (r) { return r.join(","); }).join("\n");
+    var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "shap_values.csv";
+    a.click();
+  });
+  } catch (e) {
+    // 异常显示在 .page 顶部（用户能看到具体问题而不是空白）
+    console.error("[analysis.html error]", e);
+    var box = document.createElement("div");
+    box.className = "card";
+    box.style.cssText = "border:1px solid var(--red);background:var(--red-soft);margin-bottom:12px";
+    box.innerHTML = "<h3 style='color:var(--red);margin-bottom:6px'>⚠ 页面脚本异常</h3>" +
+      "<div class='mono' style='font-size:12px;white-space:pre-wrap'>" +
+      esc(e.message) + (e.stack ? "\n\n" + String(e.stack).slice(0, 800) : "") + "</div>";
+    _page.insertBefore(box, _page.firstChild);
+  }
+})();
+</script>
+</body>
+</html>

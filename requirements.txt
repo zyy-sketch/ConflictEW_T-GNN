@@ -1,0 +1,13 @@
+# ConflictEW 依赖（python 3.13+）
+# 安装：pip install -r requirements.txt
+numpy>=2.0
+pandas>=2.2
+scipy>=1.13
+scikit-learn>=1.4
+xgboost>=2.1
+shap>=0.45
+matplotlib>=3.8
+PyYAML>=6.0
+requests>=2.31
+pytest>=8.0
+flask>=3.0        # API 服务（server.py）

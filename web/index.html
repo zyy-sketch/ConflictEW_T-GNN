@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>总览仪表盘 · ConflictEW 军费冲突早期预警系统</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav id="topnav" class="topnav"></nav>
+<div class="page">
+  <h1 class="page-title">总览仪表盘</h1>
+  <p class="page-sub" id="page-sub">全球冲突风险态势一览（最新模型版本 · 测试期 2015-2024）</p>
+
+  <div id="kpi-grid" class="grid cards" style="margin-bottom:16px">
+    <div class="card kpi"><span class="label">高风险国家（p≥0.7）</span><span class="value red" id="kpi-high">—</span><span class="sub">需人工复核与核查清单</span></div>
+    <div class="card kpi"><span class="label">中风险国家（0.5≤p&lt;0.7）</span><span class="value orange" id="kpi-mid">—</span><span class="sub">持续监控</span></div>
+    <div class="card kpi"><span class="label">全球平均风险概率</span><span class="value blue" id="kpi-avg">—</span><span class="sub">最新年份全部国家</span></div>
+    <div class="card kpi"><span class="label">本月预警数</span><span class="value" id="kpi-alert">—</span><span class="sub">分级预警（站内）</span></div>
+  </div>
+
+  <div class="grid two">
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h3>Top-10 高风险国家 <span class="hint">点击进入国家详情（P04）</span></h3>
+        <div id="top10"></div>
+      </div>
+      <div class="card">
+        <h3>快捷入口</h3>
+        <div class="grid cards" style="grid-template-columns:repeat(2,1fr)">
+          <a class="btn ghost" style="justify-content:center" href="visualize.html">可视化中心（P05）</a>
+          <a class="btn ghost" style="justify-content:center" href="alerts.html">预警中心（P06）</a>
+          <a class="btn ghost" style="justify-content:center" href="reports.html">报告中心（P07）</a>
+          <a class="btn ghost" style="justify-content:center" href="analysis.html">预测分析（P03）</a>
+        </div>
+        <div style="margin-top:12px;font-size:12.5px;color:var(--text-faint)">
+          权限说明：政府决策=全权限 · 军事研究=研究权限 · 国际关系学者=分析权限 · 投资机构=预警权限（仅读分层）
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>全球冲突风险热力图 <span class="hint">三级配色 · 点击进入可视化中心</span></h3>
+        <div id="map-wrap"><div class="chart lg" id="risk-map"></div></div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-faint)" id="map-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">ConflictEW · 输出概率与不确定性区间，非二元预警；不构成军事行动建议。地图数据来源：阿里云 DataV GeoAtlas（中国标准）。</div>
+</div>
+
+<script src="vendor/echarts.min.js?v=20260826"></script>
+<script src="vendor/world-geo.js?v=20260826"></script>
+<script src="data/app_data.js?v=20260826"></script>
+<script src="js/common.js?v=20260826"></script>
+<script>
+(function () {
+  "use strict";
+  renderNav("index.html");
+  if (!hasData()) { renderNoData(document.querySelector(".page")); return; }
+  var d = D();
+
+  // ===== API 模式增强（指令 B 红线：source/confidence 元数据展示）=====
+  // 服务器可用时：KPI 与 Top-10 由 /api/dashboard 提供（含 source/confidence），
+  // 服务器不可用则保持下方静态渲染兜底。
+  CEW.api.probe().then(function (up) {
+    if (!up) return;
+    CEW.data.get("dashboard").then(function (dd) {
+      try {
+        var kpi = dd.kpi;
+        if (kpi) {
+          document.getElementById("kpi-high").textContent = kpi.high_risk;
+          document.getElementById("kpi-mid").textContent = kpi.mid_risk;
+          document.getElementById("kpi-alert").textContent = kpi.alerts_count;
+          if (kpi.avg_risk && typeof kpi.avg_risk === "object") {
+            document.getElementById("kpi-avg").textContent = fmtPct(kpi.avg_risk.value, 1);
+            var src = kpi.avg_risk.source || "xgb-oos";
+            var conf = kpi.avg_risk.confidence;
+            var sub = document.querySelector("#kpi-avg").nextElementSibling;
+            if (sub) sub.textContent = "来源 " + src + " · 置信度 " + (conf * 100).toFixed(0) + "%";
+          }
+        }
+        // Top-10 刷新（API 数据含置信度）
+        if (dd.top10 && dd.top10.length) {
+          var t = (d.meta && d.meta.thresholds) || { high: 0.7, mid: 0.5 };
+          var html = '<table class="tbl"><tr><th>#</th><th>国家</th><th>区域</th><th class="num">p 值</th><th>等级</th><th></th></tr>';
+          dd.top10.forEach(function (r, i) {
+            var pv = typeof r.p_conflict === "object" ? r.p_conflict.value : r.p_conflict;
+            var lv = riskLevel(pv);
+            html += "<tr><td>" + (i + 1) + "</td>" +
+              "<td><b>" + esc(r.name_zh) + "</b> <span class='mono' style='color:var(--text-faint)'>" + esc(r.country) + "</span></td>" +
+              "<td>" + esc(r.region) + "</td>" +
+              '<td class="num" style="font-weight:700;color:' + riskColor[lv] + '">' + pv.toFixed(3) + "</td>" +
+              "<td>" + pBadge(pv) + "</td>" +
+              '<td><a href="country.html?c=' + esc(r.country) + "&y=" + (r.year || dd.year) + '">详情 →</a></td></tr>';
+          });
+          document.getElementById("top10").innerHTML = html + "</table>";
+        }
+      } catch (e) { /* 静态渲染兜底 */ }
+    }).catch(function () {});
+  });
+
+  document.getElementById("page-sub").textContent =
+    "最新模型 " + d.meta.model_version + " · 数据源 " + d.meta.data_source + " · 生成于 " + fmtDate(d.meta.generated_at);
+
+  // ---------- 数据准备：最新年份 ----------
+  var preds = d.predictions;
+  var maxYear = Math.max.apply(null, preds.map(function (p) { return p.year; }));
+  var latest = preds.filter(function (p) { return p.year === maxYear; });
+  latest.sort(function (a, b) { return b.p_conflict - a.p_conflict; });
+  var t = d.meta.thresholds;
+  var high = latest.filter(function (p) { return p.p_conflict >= t.high; }).length;
+  var mid = latest.filter(function (p) { return p.p_conflict >= t.mid && p.p_conflict < t.high; }).length;
+  var avg = latest.reduce(function (s, p) { return s + p.p_conflict; }, 0) / latest.length;
+  var nAlerts = d.alerts.length;
+
+  document.getElementById("kpi-high").textContent = high;
+  document.getElementById("kpi-mid").textContent = mid;
+  document.getElementById("kpi-avg").textContent = fmtPct(avg, 1);
+  document.getElementById("kpi-alert").textContent = nAlerts;
+
+  // ---------- Top-10 ----------
+  var top10 = latest.slice(0, 10);
+  var html = '<table class="tbl"><tr><th>#</th><th>国家</th><th>区域</th><th class="num">p 值</th><th>等级</th><th></th></tr>';
+  top10.forEach(function (r, i) {
+    var lv = riskLevel(r.p_conflict);
+    html += "<tr>" +
+      "<td>" + (i + 1) + "</td>" +
+      "<td><b>" + esc(r.name_zh) + "</b> <span class='mono' style='color:var(--text-faint)'>" + esc(r.country) + "</span></td>" +
+      "<td>" + esc(r.region) + "</td>" +
+      '<td class="num" style="font-weight:700;color:' + riskColor[lv] + '">' + r.p_conflict.toFixed(3) + "</td>" +
+      "<td>" + pBadge(r.p_conflict) + "</td>" +
+      '<td><a href="country.html?c=' + esc(r.country) + "&y=" + maxYear + '">详情 →</a></td>' +
+      "</tr>";
+  });
+  html += "</table>";
+  document.getElementById("top10").innerHTML = html;
+
+  // ---------- 风险热力图（懒加载：KPI/Top-10 渲染后再绘制） ----------
+  setTimeout(function () { renderMap(); }, 80);
+  function renderMap() {
+    var el = document.getElementById("risk-map");
+    if (!registerWorldMap()) { el.innerHTML = '<div class="empty">地图数据缺失</div>'; return; }
+    var chart = initChart(el);
+    if (!chart) return;
+    var data = latest.filter(function (p) { return countryByIso(p.country) && countryByIso(p.country).map_name; })
+      .map(function (p) { return { name: countryByIso(p.country).map_name, value: p.p_conflict, iso3: p.country, nameZh: p.name_zh }; });
+    var series = [{
+      name: "冲突风险概率",
+      type: "map",
+      map: "world_cn",
+      roam: true,
+      zoom: 1.15,
+      selectedMode: false,
+      emphasis: { label: { show: false }, itemStyle: { areaColor: "#2a3a5e" } },
+      itemStyle: { borderColor: "#0f1420", borderWidth: 0.6 },
+      data: data,
+      label: { show: false },
+      tooltip: {
+        formatter: function (p) {
+          if (!p.value) return "<b>" + esc(p.name) + "</b>：无数据";
+          var lv = riskLevel(p.value);
+          return "<b>" + esc(p.name) + "</b><br/>风险概率：" + p.value.toFixed(3) +
+            "<br/>等级：<b style='color:" + riskColor[lv] + "'>" + esc(riskLabel[lv]) + "</b>";
+        }
+      }
+    }];
+    setChartOpt(chart, {
+      // visualMap 是 ECharts 地图按 value 自动上色的官方标准做法（比 itemStyle.areaColor function 更可靠）
+      visualMap: {
+        show: false,  // P01 卡片小，不显示色阶图例（用底部文字图例即可）
+        type: "piecewise",
+        pieces: [
+          { lt: t.mid,              color: "#4bbf7a", label: "低风险 p < " + t.mid },
+          { gte: t.mid, lt: t.high, color: "#e8934a", label: "中风险 " + t.mid + " ≤ p < " + t.high },
+          { gte: t.high,            color: "#e05a5a", label: "高风险 p ≥ " + t.high }
+        ],
+        outOfRange: { color: "#2a3247", colorAlpha: 0.9 }  // 无预测数据：深灰兜底
+      },
+      tooltip: { trigger: "item", backgroundColor: "rgba(23,30,46,0.95)", borderColor: "#2b3752", textStyle: { color: "#e6ecf5" } },
+      series: series
+    });
+    chart.on("click", function (p) {
+      if (p.data && p.data.iso3) { location.href = "country.html?c=" + p.data.iso3 + "&y=" + maxYear; }
+      else { location.href = "visualize.html"; }
+    });
+    document.getElementById("map-legend").innerHTML =
+      '<span class="dot high"></span>高风险 p≥' + t.high +
+      '　<span class="dot mid"></span>中风险 ' + t.mid + '≤p&lt;' + t.high +
+      '　<span class="dot low"></span>低风险 p&lt;' + t.mid +
+      "　<span class='mono'>" + maxYear + " 年 · 点图放大，点击国家进详情</span>";
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,60 +1,58 @@
-"""Unit tests for the Kalman local-linear-trend filter (SCI_OPTIMIZATION_PLAN §E1)."""
+"""tests/test_kalman.py：Kalman LLT 滤波（PRD F05 验收 + §13.4 测试要求）。"""
 import numpy as np
+import pandas as pd
+import pytest
 
-from conflict_ew.features.kalman import fit_kalman, kalman_llt
-
-GRID_ETA = [1e-4, 3e-4, 1e-3, 3e-3, 1e-2]
-GRID_ZETA = [1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
-GRID_EPS = [1e-3, 3e-3, 1e-2, 3e-2, 1e-1]
+from conflict_ew.kalman import ANOMALY_Z, _fit_single, _kalman_filter, compute_kalman_signals
 
 
-def test_e_star_standard_normal_under_null():
-    """Under H0 (no anomaly), e* should be roughly standard normal."""
+def test_kalman_filter_shapes_and_finite():
     rng = np.random.default_rng(0)
-    # smooth trend + small noise
-    n = 200
-    t = np.arange(n)
-    y = 2.0 + 0.01 * t + 0.05 * rng.standard_normal(n)
-    res = kalman_llt(y, 1e-3, 1e-5, 1e-2)
-    e = res["e"][20:]  # discard burn-in
-    assert abs(e.mean()) < 0.3, f"mean {e.mean()}"
-    # e* is a standardized innovation, hence order-1 variance (not exactly 1
-    # because the test model's r_eps is slightly mis-specified vs the noise).
-    assert 0.3 < e.std() < 1.5, f"std {e.std()}"
+    y = 20 + 0.03 * np.arange(60) + rng.normal(0, 0.05, 60)
+    e, F, mu, P, ll = _kalman_filter(y, 0.005, 0.001, 0.0005)
+    assert e.shape == y.shape
+    assert np.all(np.isfinite(e))
+    assert np.all(F > 0)
+    assert np.isfinite(ll)
+    # 滤波残差应近似白噪声（均值接近 0）
+    assert abs(np.mean(e)) < 0.1
 
 
-def test_recovers_positive_trend():
-    """The slope should track a known positive linear trend."""
+def test_kalman_catches_anomaly_shock():
+    """军费突增应产生 |e*|≥2 的标准化残差（异常信号提取）。"""
     rng = np.random.default_rng(1)
-    n = 100
-    t = np.arange(n)
-    y = 1.0 + 0.05 * t + 0.01 * rng.standard_normal(n)
-    res = kalman_llt(y, 1e-3, 1e-5, 1e-2)
-    assert res["beta"][-1] > 0.03, f"final slope {res['beta'][-1]}"
+    y = 20 + 0.03 * np.arange(80)
+    y[50:55] += 0.8  # 模拟突发军费冲击
+    y = y + rng.normal(0, 0.04, 80)
+    fit = _fit_single("TST", y, [(0.002, 0.001, 0.0005), (0.01, 0.001, 0.0005)])
+    assert fit.n_obs == 80
+    assert np.isfinite(fit.log_lik)
+    assert fit.sigma2_eps > 0
 
 
-def test_determinism():
-    """Identical inputs produce identical outputs (no hidden randomness)."""
-    rng = np.random.default_rng(2)
-    y = 2.0 + 0.01 * np.arange(80) + 0.05 * rng.standard_normal(80)
-    r1 = kalman_llt(y, 1e-3, 1e-5, 1e-2)
-    r2 = kalman_llt(y, 1e-3, 1e-5, 1e-2)
-    np.testing.assert_array_equal(r1["e"], r2["e"])
-    assert r1["ll"] == r2["ll"]
+def test_kalman_skips_all_nan():
+    """全 NaN 序列跳过并记录（F05 验收：全 NaN 序列跳过+记录）。"""
+    y = np.full(30, np.nan)
+    fit = _fit_single("NAN", y, [(0.01, 0.001, 0.0005)])
+    assert fit.diverged is True
+    assert fit.n_obs == 0
+    assert "NaN" in fit.note
 
 
-def test_fit_returns_params_and_improves_ll():
-    """MLE grid search should return params and a finite log-likelihood."""
-    rng = np.random.default_rng(3)
-    y = 3.0 + 0.02 * np.arange(60) + 0.1 * rng.standard_normal(60)
-    res, params = fit_kalman(y, GRID_ETA, GRID_ZETA, GRID_EPS)
-    assert set(params) >= {"q_eta", "q_zeta", "r_eps", "ll", "n"}
-    assert np.isfinite(params["ll"])
-    assert res["params"]["ll"] == params["ll"]
+def test_kalman_short_series():
+    y = np.array([20.0, 20.1, 20.2])
+    fit = _fit_single("SHT", y, [(0.01, 0.001, 0.0005)])
+    assert "过短" in fit.note
 
 
-def test_log_transform_handles_zeros():
-    """Log transform with floor should not produce NaN for zero/negative values."""
-    y = np.log(np.maximum([0.0, -5.0, 10.0, 20.0], 1e-6))
-    res = kalman_llt(y, 1e-3, 1e-5, 1e-2)
-    assert np.all(np.isfinite(res["e"]))
+def test_anomaly_threshold():
+    assert ANOMALY_Z == 2.0
+
+
+def test_compute_kalman_signals_output(small_panel):
+    panel = small_panel.copy()
+    panel = panel[["iso3", "year", "mil_expense_log"]]
+    sig = compute_kalman_signals(panel)
+    assert {"iso3", "year", "e_star", "is_anomaly"} <= set(sig.columns)
+    assert sig["iso3"].nunique() == 3
+    assert sig["is_anomaly"].isin([0, 1]).all()

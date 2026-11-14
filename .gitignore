@@ -21,3 +21,12 @@ Thumbs.db
 
 # WorkBuddy project data (do NOT delete — holds memory/logs)
 .workbuddy/
+
+# v1 archive (pre-restructure, local only)
+legacy_local/
+
+# matplotlib font cache
+.mplcache/
+
+# leftover app-server shell from restructure
+new/

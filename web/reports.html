@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>报告中心 · ConflictEW</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav id="topnav" class="topnav"></nav>
+<div class="page">
+  <h1 class="page-title">报告中心</h1>
+  <p class="page-sub">周期性风险评估报告生成 · 导出 PDF/HTML · 历史归档（F17-F18，P1）</p>
+
+  <div class="grid two">
+    <div class="card" style="margin-bottom:16px">
+      <h3>生成风险评估报告 <span class="hint">含风险概率 + SHAP 归因 + 推理链 + 基准对比</span></h3>
+      <div class="form-row">
+        <label>报告类型</label>
+        <select class="input" id="r-type">
+          <option value="monthly">月度</option>
+          <option value="quarterly" selected>季度</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>时间范围</label>
+        <input class="input" id="r-start" type="number" min="2015" max="2024" value="2015" style="width:90px">
+        <label>至</label>
+        <input class="input" id="r-end" type="number" min="2015" max="2024" value="2024" style="width:90px">
+      </div>
+      <div class="form-row">
+        <label>国家范围</label>
+        <select class="input" id="r-country">
+          <option value="all">全部国家</option>
+        </select>
+        <span style="color:var(--text-faint);font-size:12px">或具体国家列表</span>
+      </div>
+      <div class="form-error" id="r-error"></div>
+      <button class="btn" id="r-generate">生成报告</button>
+      <div id="r-progress" style="display:none;margin-top:10px">
+        <div class="progress"><div id="r-bar" style="width:0%"></div></div>
+        <div class="mono" style="font-size:12px;color:var(--text-dim)" id="r-log"></div>
+      </div>
+      <div id="r-msg" style="margin-top:8px"></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-faint)">
+        静态演示模式：生成流程在本地模拟；完整生成由后端报告引擎执行（artifacts/reports/），
+        输出自包含 HTML（内嵌 base64 图，无外链，F18）。PDF 导出通过浏览器打印另存。
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h3>历史报告 <span class="hint">检索 / 预览 / 下载</span></h3>
+      <div id="report-list"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>报告预览区</h3>
+    <iframe id="preview-frame" style="width:100%;height:560px;border:1px solid var(--border);border-radius:8px;background:#fff" src="about:blank"></iframe>
+  </div>
+
+  <div class="footer">报告含：执行摘要 / Top-10 风险 / 区域概览 / 单国深度分析 / 模型回测与基准对比 / 方法与伦理声明 · 自包含无外链（F18）</div>
+</div>
+
+<script src="vendor/echarts.min.js?v=20260826"></script>
+<script src="data/app_data.js?v=20260826"></script>
+<script src="js/common.js?v=20260826"></script>
+<script>
+(function () {
+  "use strict";
+  renderNav("reports.html");
+  if (!hasData()) { renderNoData(document.querySelector(".page")); return; }
+  var d = D();
+
+  // ---------- 国家范围下拉 ----------
+  var rc = document.getElementById("r-country");
+  (d.countries || []).forEach(function (c) {
+    rc.innerHTML += '<option value="' + esc(c.iso3) + '">' + esc(c.name_zh) + "</option>";
+  });
+
+  // ---------- 表单验证 + 模拟生成 ----------
+  document.getElementById("r-generate").addEventListener("click", function () {
+    var s = parseInt(document.getElementById("r-start").value, 10);
+    var e = parseInt(document.getElementById("r-end").value, 10);
+    var err = document.getElementById("r-error");
+    if (!Number.isInteger(s) || !Number.isInteger(e) || s < 2015 || e > 2024 || s > e) {
+      err.textContent = "时间范围无效：2015-2024 且 start≤end";
+      return;
+    }
+    err.textContent = "";
+    var box = document.getElementById("r-progress");
+    var bar = document.getElementById("r-bar");
+    var log = document.getElementById("r-log");
+    var msg = document.getElementById("r-msg");
+    box.style.display = "block"; msg.innerHTML = "";
+    var stages = [
+      "加载 OOS 概率与 SHAP 归因 ...", "生成风险热力与 Top-10 图表 ...",
+      "生成单国 SHAP 瀑布图 ...", "组装推理链与基准对比表 ...",
+      "内嵌 base64 矢量图（自包含 HTML）...", "[done] 报告生成完成"
+    ];
+    var i = 0;
+    var timer = setInterval(function () {
+      bar.style.width = Math.min(100, ((i + 1) / stages.length) * 100) + "%";
+      log.textContent = stages[i] || "";
+      i++;
+      if (i > stages.length) {
+        clearInterval(timer);
+        msg.innerHTML = '✅ 报告已生成（静态演示：模拟完成）。历史报告见下方列表；完整生成运行 ' +
+          '<span class="mono">python scripts/run_all.py</span> 或报告引擎。' +
+          ' <button class="btn ghost" onclick="window.print()">导出 PDF（打印）</button>';
+      }
+    }, 500);
+  });
+
+  // ---------- 历史报告列表 ----------
+  var reports = d.reports || [];
+  function renderReports() {
+    var box = document.getElementById("report-list");
+    if (!reports.length) {
+      box.innerHTML = '<div class="empty" style="padding:30px">暂无历史报告 — 运行后端管道生成（python scripts/run_all.py）</div>';
+      return;
+    }
+    var html = '<table class="tbl"><tr><th>报告 ID</th><th>类型</th><th>周期</th><th>国家范围</th><th>生成时间</th><th>状态</th><th>操作</th></tr>';
+    reports.forEach(function (r) {
+      var fname = (r.file_path || "").split(/[\\/]/).pop();
+      html += "<tr>" +
+        '<td class="mono">' + esc(r.report_id) + "</td>" +
+        "<td>" + esc(r.type) + "</td>" +
+        "<td>" + esc(r.period || "—") + "</td>" +
+        "<td>" + (r.countries === "全部" || r.countries === "all" ? "全部" : esc(String(r.countries).slice(0, 40) + (String(r.countries).length > 40 ? "…" : ""))) + "</td>" +
+        "<td>" + esc(r.generated_at || "—") + "</td>" +
+        '<td><span class="tag ok">' + esc(r.status || "success") + "</span></td>" +
+        '<td><button class="btn ghost" onclick="previewReport(\'' + esc(fname) + '\')">预览</button> ' +
+        '<a class="btn ghost" href="/reports/' + esc(fname) + '" target="_blank" download>下载</a></td>' +
+        "</tr>";
+    });
+    html += "</table>";
+    box.innerHTML = html;
+  }
+  window.previewReport = function (fname) {
+    // 服务器模式：直接走 /reports/<filename> 静态路由；file:// 模式下 iframe
+    // 受浏览器同源策略限制（无法加载本地文件），给出明确提示。
+    var iframe = document.getElementById("preview-frame");
+    if (location.protocol === "file:") {
+      iframe.src = "about:blank";
+      var wrap = iframe.parentNode;
+      if (wrap && !document.getElementById("__file_proto_warn")) {
+        var tip = document.createElement("div");
+        tip.id = "__file_proto_warn";
+        tip.style.cssText = "padding:14px 18px;color:var(--orange);font-size:13px;border:1px solid var(--orange);border-radius:8px;background:var(--orange-soft);margin-top:8px";
+        tip.textContent = "file:// 协议下浏览器阻止 iframe 加载本地 HTML。请通过 http://127.0.0.1:8000/reports.html 访问，或点击右侧「下载」按钮获取报告。";
+        wrap.appendChild(tip);
+      }
+      return;
+    }
+    iframe.src = "/reports/" + fname;
+  };
+  renderReports();
+
+  // 若有最新报告，直接预览第一个
+  if (reports.length) {
+    var latest = (reports[0].file_path || "").split(/[\\/]/).pop();
+    setTimeout(function () { previewReport(latest); }, 300);
+  }
+})();
+</script>
+</body>
+</html>

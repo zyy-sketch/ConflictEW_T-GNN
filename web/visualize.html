@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>可视化中心 · ConflictEW</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav id="topnav" class="topnav"></nav>
+<div class="page">
+  <h1 class="page-title">可视化中心</h1>
+  <p class="page-sub">军费趋势 · 风险热力地图 · 国家对比 · SHAP 归因（F10-F13）</p>
+
+  <div class="tabs" id="tabs">
+    <button data-v="trend" class="active">军费趋势</button>
+    <button data-v="map">风险热力图</button>
+    <button data-v="compare">国家对比</button>
+    <button data-v="shap">SHAP 归因</button>
+    <button data-v="forecast">未来预测</button>
+  </div>
+
+  <!-- 军费趋势 -->
+  <div class="panel active" id="v-trend">
+    <div class="card">
+      <div class="form-row">
+        <label>选择国家（多选 ≤5）</label>
+        <select class="input" id="t-countries" multiple size="6" style="width:280px"></select>
+        <div>
+          <button class="btn" id="t-add">添加</button>
+          <button class="btn ghost" id="t-clear">清空</button>
+        </div>
+        <div style="font-size:12.5px;color:var(--text-dim)">
+          <div>已选：<span id="t-selected"></span></div>
+          <div class="form-error" id="t-error"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>年份</label>
+        <input class="input" id="t-start" type="number" min="1970" max="2024" style="width:90px">
+        <label>至</label>
+        <input class="input" id="t-end" type="number" min="1970" max="2024" style="width:90px">
+        <button class="btn ghost" id="t-apply">应用</button>
+        <button class="btn ghost" id="t-export">导出图表（PNG）</button>
+      </div>
+      <div class="chart lg" id="trend-chart"></div>
+    </div>
+  </div>
+
+  <!-- 风险热力图 -->
+  <div class="panel" id="v-map">
+    <div class="card">
+      <div class="form-row">
+        <label>展示年份</label>
+        <select class="input" id="m-year"></select>
+        <span id="m-legend" style="font-size:12.5px;color:var(--text-dim)"></span>
+      </div>
+      <div class="chart lg" id="map-chart"></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-faint)">
+        地图数据来源：阿里云 DataV GeoAtlas（中国标准）· 色盲安全三级配色 · hover 显示国家详情
+      </div>
+    </div>
+  </div>
+
+  <!-- 国家对比 -->
+  <div class="panel" id="v-compare">
+    <div class="card">
+      <div class="form-row">
+        <label>选择国家（≤5，超出提示）</label>
+        <select class="input" id="c-select" style="width:200px"></select>
+        <button class="btn" id="c-add">添加</button>
+        <button class="btn ghost" id="c-clear">清空</button>
+        <span id="c-selected"></span>
+        <span class="form-error" id="c-error"></span>
+      </div>
+      <div class="form-row">
+        <label>年份</label>
+        <select class="input" id="c-year"></select>
+        <span style="color:var(--text-faint);font-size:12.5px">柱状图=风险概率 · 雷达图=6 因子 SHAP 均值</span>
+      </div>
+      <div class="grid two">
+        <div><h3 style="color:var(--text-dim);font-size:14px;margin-bottom:8px">风险概率对比</h3><div class="chart" id="bar-chart"></div></div>
+        <div><h3 style="color:var(--text-dim);font-size:14px;margin-bottom:8px">因子归因雷达</h3><div class="chart" id="radar-chart"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHAP 归因 -->
+  <div class="panel" id="v-shap">
+    <div class="card">
+      <div class="form-row">
+        <label>国家</label>
+        <select class="input" id="s-country" style="width:220px"></select>
+        <label>年份</label>
+        <select class="input" id="s-year" style="width:110px"></select>
+      </div>
+      <div class="chart lg" id="shap-chart"></div>
+      <div id="s-note" style="font-size:12.5px;color:var(--text-faint)"></div>
+    </div>
+  </div>
+
+  <!-- 未来预测 -->
+  <div class="panel" id="v-forecast">
+    <div class="card">
+      <div class="form-row">
+        <label>选择国家（多选 ≤5）</label>
+        <select class="input" id="f-countries" multiple size="6" style="width:280px"></select>
+        <div>
+          <button class="btn" id="f-add">添加</button>
+          <button class="btn ghost" id="f-clear">清空</button>
+        </div>
+        <div style="font-size:12.5px;color:var(--text-dim)">
+          <div>已选：<span id="f-selected"></span></div>
+          <div class="form-error" id="f-error"></div>
+        </div>
+      </div>
+      <div class="chart lg" id="forecast-chart"></div>
+      <div id="f-meta" style="font-size:12px;color:var(--text-faint);margin-top:6px"></div>
+    </div>
+  </div>
+
+  <div class="footer">国家对比最多 5 国（F12）· 趋势图按需渲染，大数据量提示缩小范围（§7.5 状态）</div>
+</div>
+
+<script src="vendor/echarts.min.js?v=20260826"></script>
+<script src="vendor/world-geo.js?v=20260826"></script>
+<script src="data/app_data.js?v=20260826"></script>
+<script src="js/common.js?v=20260826"></script>
+<script>
+(function () {
+  "use strict";
+  renderNav("visualize.html");
+  if (!hasData()) { renderNoData(document.querySelector(".page")); return; }
+  var d = D();
+  var t = d.meta.thresholds;
+  var years = d.predictions.map(function (p) { return p.year; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort();
+  var maxYear = Math.max.apply(null, years);
+  var fnames = {}; var fdefs = {};
+  (d.factorRegistry || []).forEach(function (f) { fnames[f.id] = f.name; fdefs[f.id] = f.description; });
+
+  // ---------- Tabs ----------
+  var tabs = document.getElementById("tabs");
+  tabs.addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    tabs.querySelectorAll("button").forEach(function (x) { x.classList.remove("active"); });
+    b.classList.add("active");
+    document.querySelectorAll(".panel").forEach(function (p) { p.classList.remove("active"); });
+    document.getElementById("v-" + b.getAttribute("data-v")).classList.add("active");
+    [trendChart, mapChart, barChart, radarChart, shapChart, forecastChart].forEach(function (c) { if (c) setTimeout(function () { c.resize(); }, 40); });
+  });
+
+  // ---------- 通用：国家选择 ----------
+  var sorted = d.countries.slice().sort(function (a, b) { return a.name_zh.localeCompare(b.name_zh, "zh"); });
+  function selOptions(sel, selected) {
+    sel.innerHTML = sorted.map(function (c) {
+      return '<option value="' + esc(c.iso3) + '">' + esc(c.name_zh) + "（" + esc(c.iso3) + "）</option>";
+    }).join("");
+  }
+  function yearOptions(sel, val) {
+    sel.innerHTML = years.map(function (y) { return '<option value="' + y + '"' + (y === val ? " selected" : "") + ">" + y + "</option>"; }).join("");
+  }
+
+  // ---------- 1. 军费趋势 ----------
+  var trendChart = null;
+  var selTrend = [];
+  var tCountrySel = document.getElementById("t-countries");
+  selOptions(tCountrySel);
+  document.getElementById("t-add").addEventListener("click", function () {
+    var v = tCountrySel.value; if (!v) return;
+    if (selTrend.indexOf(v) >= 0) { document.getElementById("t-error").textContent = "该国家已在列表中"; return; }
+    if (selTrend.length >= 5) { document.getElementById("t-error").textContent = "最多对比 5 个国家"; return; }
+    document.getElementById("t-error").textContent = "";
+    selTrend.push(v); renderTrend(); updateTrendSel();
+  });
+  document.getElementById("t-clear").addEventListener("click", function () { selTrend = []; renderTrend(); updateTrendSel(); });
+  document.getElementById("t-apply").addEventListener("click", renderTrend);
+  function updateTrendSel() {
+    document.getElementById("t-selected").innerHTML = selTrend.map(function (i) {
+      return '<span class="tag">' + esc(countryName(i)) + " (" + esc(i) + ')</span>';
+    }).join("");
+  }
+  var tStart = document.getElementById("t-start"), tEnd = document.getElementById("t-end");
+  tStart.value = 1990; tEnd.value = maxYear;
+  function renderTrend() {
+    var el = document.getElementById("trend-chart");
+    if (!selTrend.length) { el.innerHTML = '<div class="empty">请选择至少 1 个国家（多选下拉添加）</div>'; return; }
+    if (!trendChart) { trendChart = initChart(el); }
+    if (!trendChart) return;
+    var s = parseInt(tStart.value, 10), e = parseInt(tEnd.value, 10);
+    if (!Number.isInteger(s) || !Number.isInteger(e) || s > e) { alert("年份范围无效：start≤end"); return; }
+    var series = [];
+    selTrend.forEach(function (iso3, idx) {
+      var tr = d.trends[iso3]; if (!tr) return;
+      var idxs = [];
+      tr.years.forEach(function (y, i) { if (y >= s && y <= e) idxs.push(i); });
+      var yearsArr = idxs.map(function (i) { return tr.years[i]; });
+      var mil = idxs.map(function (i) { return tr.mil[i]; });
+      var earr = idxs.map(function (i) { return tr.e[i]; });
+      var anom = [];
+      idxs.forEach(function (i, j) { if (tr.anom[i] === 1 && earr[j] !== null) anom.push([yearsArr[j], earr[j]]); });
+      series.push({
+        name: countryName(iso3), type: "line", data: mil, smooth: true, showSymbol: false,
+        lineStyle: { width: 2 }, connectNulls: false,
+        markPoint: anom.length ? {
+          symbol: "pin", symbolSize: 26, itemStyle: { color: "#e05a5a" },
+          data: anom.slice(0, 12).map(function (pt) { return { coord: pt, value: "异常" }; }),
+          label: { show: false }
+        } : undefined
+      });
+    });
+    if (!series.length) { el.innerHTML = '<div class="empty">所选国家无趋势数据</div>'; return; }
+    setChartOpt(trendChart, {
+      grid: { top: 40, left: 70, right: 40, bottom: 40 },
+      legend: { top: 8 },
+      tooltip: { trigger: "axis" },
+      xAxis: { type: "category", data: (function () {
+        var tr = d.trends[selTrend[0]]; if (!tr) return [];
+        var out = []; tr.years.forEach(function (y) { if (y >= s && y <= e) out.push(y); }); return out;
+      })(), name: "年份" },
+      yAxis: { type: "value", name: "log(军费 US$)", scale: true },
+      series: series
+    });
+  }
+
+  // ---------- 2. 热力图 ----------
+  var mapChart = null;
+  var mYearSel = document.getElementById("m-year");
+  yearOptions(mYearSel, maxYear);
+  document.getElementById("m-legend").innerHTML =
+    '<span class="dot high"></span>高风险 p≥' + t.high + '　<span class="dot mid"></span>中风险 ' +
+    t.mid + '≤p&lt;' + t.high + '　<span class="dot low"></span>低风险 p&lt;' + t.mid;
+  mYearSel.addEventListener("change", renderMap);
+  function renderMap() {
+    var el = document.getElementById("map-chart");
+    if (!registerWorldMap()) { el.innerHTML = '<div class="empty">地图数据缺失</div>'; return; }
+    if (!mapChart) mapChart = initChart(el);
+    if (!mapChart) return;
+    var yr = parseInt(mYearSel.value, 10);
+    var rows = d.predictions.filter(function (p) { return p.year === yr; });
+    var data = rows.filter(function (p) { return countryByIso(p.country) && countryByIso(p.country).map_name; })
+      .map(function (p) { return { name: countryByIso(p.country).map_name, value: p.p_conflict, iso3: p.country, nameZh: p.name_zh }; });
+    setChartOpt(mapChart, {
+      tooltip: {
+        trigger: "item",
+        formatter: function (p) {
+          if (!p.value) return "<b>" + esc(p.name) + "</b>：无数据";
+          var lv = riskLevel(p.value);
+          return "<b>" + esc(p.name) + "</b><br/>风险概率：" + p.value.toFixed(3) +
+            "<br/>等级：<b style='color:" + riskColor[lv] + "'>" + esc(riskLabel[lv]) + "</b>";
+        }
+      },
+      // visualMap 是 ECharts 地图按 value 自动上色的标准做法 —— 让地图区域真正按低/中/高三色显示
+      visualMap: {
+        show: true, type: "piecewise", left: 16, bottom: 30,
+        orient: "vertical", itemWidth: 14, itemHeight: 14, itemGap: 8,
+        textStyle: { color: "#93a1b8", fontSize: 11 },
+        pieces: [
+          { lt: t.mid,              color: "#4bbf7a", label: "低风险 p < " + t.mid },
+          { gte: t.mid, lt: t.high, color: "#e8934a", label: "中风险 " + t.mid + " ≤ p < " + t.high },
+          { gte: t.high,            color: "#e05a5a", label: "高风险 p ≥ " + t.high }
+        ],
+        // 没有预测数据的国家用深灰兜底（清晰区分"有数据"与"无数据"）
+        outOfRange: { color: "#2a3247", colorAlpha: 0.9 }
+      },
+      series: [{
+        name: "冲突风险概率", type: "map", map: "world_cn", roam: true, zoom: 1.1,
+        selectedMode: false,
+        emphasis: { label: { show: false }, itemStyle: { areaColor: "#3a4a6e" } },
+        itemStyle: {
+          borderColor: "#0f1420", borderWidth: 0.6
+          // areaColor 由 visualMap.inRange 自动接管，无需手写 function
+        },
+        data: data,
+        label: { show: false }
+      }]
+    });
+    mapChart.on("click", function (p) {
+      if (p.data && p.data.iso3) location.href = "country.html?c=" + p.data.iso3 + "&y=" + yr;
+    });
+  }
+
+  // ---------- 3. 国家对比 ----------
+  var barChart = null, radarChart = null;
+  var selCompare = [];
+  var cSel = document.getElementById("c-select");
+  selOptions(cSel);
+  var cYearSel = document.getElementById("c-year");
+  yearOptions(cYearSel, maxYear);
+  document.getElementById("c-add").addEventListener("click", function () {
+    var v = cSel.value; if (!v) return;
+    if (selCompare.indexOf(v) >= 0) { document.getElementById("c-error").textContent = "该国家已在列表"; return; }
+    if (selCompare.length >= 5) { document.getElementById("c-error").textContent = "最多对比 5 个国家"; return; }
+    document.getElementById("c-error").textContent = "";
+    selCompare.push(v); renderCompare(); updateCompareSel();
+  });
+  document.getElementById("c-clear").addEventListener("click", function () { selCompare = []; renderCompare(); updateCompareSel(); });
+  cYearSel.addEventListener("change", renderCompare);
+  function updateCompareSel() {
+    document.getElementById("c-selected").innerHTML = selCompare.map(function (i) {
+      return '<span class="tag">' + esc(countryName(i)) + " (" + esc(i) + ')</span>';
+    }).join("");
+  }
+  function renderCompare() {
+    var yr = parseInt(cYearSel.value, 10);
+    var barEl = document.getElementById("bar-chart"), radarEl = document.getElementById("radar-chart");
+    if (!selCompare.length) {
+      barEl.innerHTML = '<div class="empty">请添加 1-5 个国家</div>';
+      radarEl.innerHTML = '<div class="empty">请添加 1-5 个国家</div>';
+      return;
+    }
+    if (!barChart) barChart = initChart(barEl);
+    if (!radarChart) radarChart = initChart(radarEl);
+    if (!barChart || !radarChart) return;
+    // 柱状图：风险概率
+    var data = selCompare.map(function (iso3) {
+      var row = d.predictions.find(function (p) { return p.country === iso3 && p.year === yr; });
+      return { name: countryName(iso3), value: row ? row.p_conflict : null, iso3: iso3 };
+    });
+    setChartOpt(barChart, {
+      grid: { top: 30, left: 60, right: 20, bottom: 40 },
+      xAxis: { type: "category", data: data.map(function (x) { return x.name; }), axisLabel: { rotate: 20, fontSize: 11 } },
+      yAxis: { type: "value", min: 0, max: 1, name: "风险概率" },
+      series: [{
+        type: "bar", data: data.map(function (x) { return x.value; }),
+        itemStyle: { color: function (p) { return riskColor[riskLevel(p.value)]; } },
+        label: { show: true, position: "top", formatter: function (p) { return p.value === null ? "—" : p.value.toFixed(3); }, color: "#93a1b8" },
+        markLine: { symbol: "none", lineStyle: { type: "dashed", color: "#e05a5a" }, data: [{ yAxis: t.high }], label: { formatter: "0.7", color: "#e05a5a" } }
+      }],
+      tooltip: {
+        trigger: "item",
+        formatter: function (p) {
+          var r = data[p.dataIndex];
+          var lv = riskLevel(r.value);
+          return "<b>" + esc(r.name) + "</b><br/>风险概率：" + (r.value === null ? "—" : r.value.toFixed(3)) + "<br/>等级：" + esc(riskLabel[lv]);
+        }
+      }
+    });
+    // 雷达图：6 因子 SHAP
+    var indicators = ["F1", "F2", "F3", "F4", "F5", "F6"].map(function (f) {
+      return { name: f + " " + (fnames[f] || ""), max: 1.5, min: -1.5 };
+    });
+    var radarSeries = selCompare.map(function (iso3) {
+      var sv = (d.shap[iso3] || {})[yr] || {};
+      return {
+        name: countryName(iso3), value: ["F1", "F2", "F3", "F4", "F5", "F6"].map(function (f) {
+          return sv[f] === null || sv[f] === undefined ? 0 : sv[f];
+        })
+      };
+    });
+    setChartOpt(radarChart, {
+      legend: { bottom: 0, textStyle: { fontSize: 11 } },
+      radar: { indicator: indicators, radius: "62%", center: ["50%", "46%"], axisName: { color: "#93a1b8", fontSize: 10.5 } },
+      series: [{ type: "radar", data: radarSeries, symbolSize: 3, lineStyle: { width: 1.6 }, areaStyle: { opacity: 0.12 } }],
+      tooltip: { trigger: "item" }
+    });
+  }
+
+  // ---------- 4. SHAP 归因 ----------
+  var shapChart = null;
+  var sCountrySel = document.getElementById("s-country");
+  var sYearSel = document.getElementById("s-year");
+  selOptions(sCountrySel);
+  yearOptions(sYearSel, maxYear);
+  sCountrySel.value = selCompare[0] || (d.predictions.length ? d.predictions[0].country : "");
+  sCountrySel.addEventListener("change", renderShapView);
+  sYearSel.addEventListener("change", renderShapView);
+  function renderShapView() {
+    var el = document.getElementById("shap-chart");
+    var iso3 = sCountrySel.value, yr = parseInt(sYearSel.value, 10);
+    if (!shapChart) shapChart = initChart(el);
+    if (!shapChart) return;
+    var sv = (d.shap[iso3] || {})[yr];
+    if (!sv) { el.innerHTML = '<div class="empty">该国家该年份无 SHAP 归因（模型覆盖 2015-2024）</div>'; return; }
+    var items = Object.keys(sv).map(function (fid) {
+      return { name: fid + " " + (fnames[fid] || ""), value: sv[fid], fid: fid };
+    }).sort(function (a, b) { return a.value - b.value; });
+    setChartOpt(shapChart, {
+      grid: { left: 130, right: 40, top: 30, bottom: 40 },
+      xAxis: { type: "value", name: "SHAP 贡献（logit(p)）", nameLocation: "middle", nameGap: 26 },
+      yAxis: { type: "category", data: items.map(function (i) { return i.name; }), axisLabel: { fontSize: 11.5 } },
+      series: [{
+        type: "bar", data: items.map(function (i) { return i.value; }),
+        itemStyle: { color: function (p) { return p.value >= 0 ? "#e05a5a" : "#4bbf7a"; } },
+        label: { show: true, position: "right", formatter: function (p) { return p.value.toFixed(3); }, color: "#93a1b8", fontSize: 10.5 }
+      }],
+      tooltip: {
+        trigger: "item",
+        formatter: function (p) {
+          var it = items[p.dataIndex];
+          return "<b>" + esc(it.name) + "</b><br/>贡献：" + it.value.toFixed(4) + "<br/>" + esc(fdefs[it.fid] || "") +
+            "<br/><span style='color:var(--text-faint)'>" + (it.value >= 0 ? "推高风险" : "压低风险") +
+            (Math.abs(it.value) < 0.05 ? " · 非实质驱动因子" : "") + "</span>";
+        }
+      }
+    });
+    document.getElementById("s-note").innerHTML =
+      "局部精度校验：φ₀+Σφⱼ=logit(p)，容差&lt;1e-6（F08）· |φ|&lt;0.05 标注非实质驱动因子";
+  }
+
+  // ---------- 导出 PNG ----------
+  document.getElementById("t-export").addEventListener("click", function () {
+    if (!trendChart) return;
+    var url = trendChart.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#0f1420" });
+    var a = document.createElement("a");
+    a.href = url; a.download = "trend_chart.png"; a.click();
+  });
+
+  // ---------- 5. 未来预测（2025-2030，API 优先 / 静态降级）----------
+  var forecastChart = null;
+  var selFore = [];
+  var fCountrySel = document.getElementById("f-countries");
+  selOptions(fCountrySel);
+  var fMeta = document.getElementById("f-meta");
+  document.getElementById("f-add").addEventListener("click", function () {
+    var v = fCountrySel.value; if (!v) return;
+    if (selFore.indexOf(v) >= 0) { document.getElementById("f-error").textContent = "该国家已在列表中"; return; }
+    if (selFore.length >= 5) { document.getElementById("f-error").textContent = "最多对比 5 个国家"; return; }
+    document.getElementById("f-error").textContent = "";
+    selFore.push(v); updateForeSel(); renderForecastPanel();
+  });
+  document.getElementById("f-clear").addEventListener("click", function () {
+    selFore = []; updateForeSel(); renderForecastPanel();
+  });
+  function updateForeSel() {
+    document.getElementById("f-selected").innerHTML = selFore.map(function (i) {
+      return '<span class="tag">' + esc(countryName(i)) + " (" + esc(i) + ')</span>';
+    }).join("");
+  }
+  function renderForecastPanel() {
+    var el = document.getElementById("forecast-chart");
+    if (!selFore.length) { el.innerHTML = '<div class="empty">请选择至少 1 个国家（2025-2030 未来概率对比）</div>'; fMeta.textContent = ""; return; }
+    if (!window.CEW || !CEW.api || location.protocol.startsWith("file")) {
+      el.innerHTML = '<div class="empty">静态模式（file:// 或未连接 server.py）：未来预测需要后端模型打分。<br>请运行 <code>python server.py</code> 并访问 http://127.0.0.1:8000/visualize.html</div>';
+      fMeta.textContent = "";
+      return;
+    }
+    if (!forecastChart) forecastChart = initChart(el);
+    if (!forecastChart) return;
+    fMeta.textContent = "加载未来预测中…";
+    // 并行请求各国 forecast（2025-2030 默认）
+    Promise.all(selFore.map(function (iso3) {
+      return CEW.api.get("forecast", { country: iso3 }).then(function (fc) {
+        return { iso3: iso3, fc: fc };
+      });
+    })).then(function (results) {
+      var series = [];
+      var cats = [];
+      results.forEach(function (r, idx) {
+        var fut = (r.fc && r.fc.points) || [];
+        if (!fut.length) return;
+        var vals = fut.map(function (p) { return p.p_conflict.value; });
+        fut.forEach(function (p) { if (cats.indexOf(p.year) < 0) cats.push(p.year); });
+        cats.sort(function (a, b) { return a - b; });
+        var color = ["#4d8dff", "#e8934a", "#4bbf7a", "#d9c04e", "#c76fbf"][idx % 5];
+        series.push({
+          name: countryName(r.iso3), type: "line", data: vals, smooth: true,
+          showSymbol: true, symbolSize: 6, symbol: "emptyCircle",
+          lineStyle: { width: 2, type: "dashed", color: color },
+          itemStyle: { color: color },
+          areaStyle: { opacity: 0.12, color: color },
+          _ri: idx
+        });
+      });
+      if (!series.length) { el.innerHTML = '<div class="empty">所选国家均无未来预测数据（历史军费覆盖不足）</div>'; fMeta.textContent = ""; return; }
+      setChartOpt(forecastChart, {
+        grid: { top: 50, left: 70, right: 40, bottom: 40 },
+        legend: { top: 8 },
+        tooltip: {
+          trigger: "axis",
+          formatter: function (ps) {
+            var out = "<b>" + ps[0].axisValue + " 年</b><br/>";
+            ps.forEach(function (p) {
+              var s = series[p.seriesIndex];
+              var rr = s && results[s._ri];
+              var f = rr && rr.fc.points.find(function (x) { return x.year === p.axisValue; });
+              out += esc(p.seriesName) + "：" + (p.value === null ? "—" : p.value.toFixed(3));
+              if (f && f.p_conflict) {
+                out += " <span style='color:var(--text-faint)'>[" + esc(f.p_conflict.source) + " · conf " +
+                  (f.p_conflict.confidence * 100).toFixed(0) + "%]</span>";
+              }
+              out += "<br/>";
+            });
+            return out;
+          }
+        },
+        xAxis: { type: "category", data: cats, name: "年份" },
+        yAxis: { type: "value", min: 0, max: 1, name: "冲突风险概率" },
+        series: series
+      });
+      fMeta.innerHTML = "2025 IMF 估计（conf 0.60）→ 2026 IMF 预测（0.50）→ 2027-2030 趋势外推 + XGBoost 打分（0.42→0.25 递减）· 虚线=预测值，半透明带宽=置信度（conf 越低带宽越大）· 0.7/0.5 阈值线仅作参考";
+    }).catch(function (err) {
+      fMeta.textContent = "未来预测加载失败：" + (err && err.message ? err.message : err);
+    });
+  }
+
+  // 初始渲染
+  renderMap();
+  updateTrendSel(); updateCompareSel(); renderShapView(); renderForecastPanel();
+})();
+</script>
+</body>
+</html>

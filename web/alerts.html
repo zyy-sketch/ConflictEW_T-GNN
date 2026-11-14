@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>预警中心 · ConflictEW</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav id="topnav" class="topnav"></nav>
+<div class="page">
+  <h1 class="page-title">预警中心</h1>
+  <p class="page-sub">分级预警触发 · 通知管理 · 阈值配置 · 预警历史（F15-F16，P1）</p>
+
+  <div class="grid two">
+    <div class="card" style="margin-bottom:16px">
+      <h3>当前预警列表 <span class="hint">点击进入国家详情（P04）</span></h3>
+      <div id="alert-list"></div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h3>阈值配置 <span class="hint">管理员 · 仅训练期有效（防泄漏约束）</span></h3>
+        <div class="form-row">
+          <label>高风险阈值</label>
+          <input class="input" id="th-high" type="number" step="0.05" min="0.5" max="0.95" style="width:100px" value="0.7">
+          <span style="color:var(--text-faint);font-size:12px">0.5-0.95</span>
+        </div>
+        <div class="form-row">
+          <label>中风险阈值</label>
+          <input class="input" id="th-mid" type="number" step="0.05" min="0.3" max="0.7" style="width:100px" value="0.5">
+          <span style="color:var(--text-faint);font-size:12px">0.3-0.7</span>
+        </div>
+        <div class="form-error" id="th-error"></div>
+        <button class="btn" id="th-save">保存阈值配置</button>
+        <div id="th-msg" style="font-size:12.5px;color:var(--text-dim);margin-top:8px"></div>
+        <div style="margin-top:6px;font-size:12px;color:var(--text-faint)">
+          约束：高风险须大于中风险阈值（"高风险阈值须大于中风险阈值"）；阈值选择仅在训练期验证折完成，测试期不改阈值。
+        </div>
+      </div>
+      <div class="card">
+        <h3>分级通知开关</h3>
+        <div class="form-row">
+          <label><input type="checkbox" id="nt-high" checked> 高风险通知（人工复核）</label>
+          <label style="margin-left:14px"><input type="checkbox" id="nt-mid" checked> 中风险通知（持续监控）</label>
+        </div>
+        <div style="font-size:12px;color:var(--text-faint)">
+          渠道：站内通知（in-app）✅ · 邮件（SMTP 待配置，config.yaml → alert.email）⛔
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>预警历史时间线 <span class="hint">筛选：等级 / 国家</span></h3>
+    <div class="form-row">
+      <label>等级</label>
+      <select class="input" id="h-level">
+        <option value="">全部</option><option value="high">高风险</option><option value="mid">中风险</option>
+      </select>
+      <label>国家</label>
+      <select class="input" id="h-country" style="width:200px"><option value="">全部</option></select>
+    </div>
+    <div id="hist-box"></div>
+  </div>
+
+  <div class="footer">预警触发：风险概率穿越阈值（p≥0.7 高风险触发 Agent 核查清单+人工复核；0.5≤p&lt;0.7 持续监控）· 概率 NaN/越界自动拦截（§5.3）</div>
+</div>
+
+<script src="vendor/echarts.min.js?v=20260826"></script>
+<script src="data/app_data.js?v=20260826"></script>
+<script src="js/common.js?v=20260826"></script>
+<script>
+(function () {
+  "use strict";
+  renderNav("alerts.html");
+  if (!hasData()) { renderNoData(document.querySelector(".page")); return; }
+  var d = D();
+  var t = d.meta.thresholds;
+
+  // ---------- 阈值配置初始值 ----------
+  document.getElementById("th-high").value = t.high;
+  document.getElementById("th-mid").value = t.mid;
+
+  // ---------- 预警列表 ----------
+  var alerts = d.alerts || [];
+  function renderAlerts() {
+    var box = document.getElementById("alert-list");
+    if (!alerts.length) {
+      box.innerHTML = '<div class="empty" style="padding:40px 10px">暂无预警 — 当前高风险/中风险国家为 0。' +
+        '<br><span style="color:var(--text-faint)">预警取决于模型输出与阈值，见预测分析页（P03）。</span></div>';
+      return;
+    }
+    var html = '<table class="tbl"><tr><th>预警 ID</th><th>时间</th><th>国家</th><th>年份</th><th class="num">概率</th><th>等级</th><th>触发原因</th><th></th></tr>';
+    alerts.forEach(function (a) {
+      html += "<tr>" +
+        '<td class="mono">' + esc(a.alert_id) + "</td>" +
+        "<td>" + fmtDate(a.trigger_time) + "</td>" +
+        "<td><b>" + esc(a.country_name || a.country) + "</b> <span class='mono' style='color:var(--text-faint)'>" + esc(a.country) + "</span></td>" +
+        "<td>" + a.year + "</td>" +
+        '<td class="num" style="font-weight:700;color:' + riskColor[a.risk_level] + '">' + a.p_value.toFixed(3) + "</td>" +
+        "<td>" + badge(a.risk_level) + "</td>" +
+        '<td style="font-size:12px;color:var(--text-dim)">' + esc(a.trigger_reason || "") + "</td>" +
+        '<td><a href="country.html?c=' + esc(a.country) + "&y=" + a.year + '">详情 →</a></td>' +
+        "</tr>";
+    });
+    html += "</table>";
+    box.innerHTML = html;
+  }
+  renderAlerts();
+
+  // ---------- 阈值配置验证（F16） ----------
+  document.getElementById("th-save").addEventListener("click", function () {
+    var hi = parseFloat(document.getElementById("th-high").value);
+    var mid = parseFloat(document.getElementById("th-mid").value);
+    var err = document.getElementById("th-error");
+    var msg = document.getElementById("th-msg");
+    if (isNaN(hi) || hi < 0.5 || hi > 0.95) { err.textContent = "高风险阈值须在 0.5-0.95 之间"; msg.textContent = ""; return; }
+    if (isNaN(mid) || mid < 0.3 || mid > 0.7) { err.textContent = "中风险阈值须在 0.3-0.7 之间"; msg.textContent = ""; return; }
+    if (hi <= mid) { err.textContent = "高风险阈值须大于中风险阈值"; msg.textContent = ""; return; }
+    err.textContent = "";
+    msg.innerHTML = "✅ 验证通过：" + hi + " / " + mid +
+      "（静态演示：实际写回 config.yaml → eval.thresholds 由后端完成；" +
+      "<b style='color:var(--orange)'>阈值选择仅在训练期完成，防泄漏</b>）";
+  });
+
+  // ---------- 历史时间线 ----------
+  var hist = d.alertHistory || [];
+  var hCountrySel = document.getElementById("h-country");
+  var hLevelSel = document.getElementById("h-level");
+  (d.countries || []).forEach(function (c) {
+    hCountrySel.innerHTML += '<option value="' + esc(c.iso3) + '">' + esc(c.name_zh) + "</option>";
+  });
+  function renderHist() {
+    var lv = hLevelSel.value, co = hCountrySel.value;
+    var rows = hist.filter(function (a) {
+      return (!lv || a.risk_level === lv) && (!co || a.country === co);
+    }).sort(function (a, b) { return (b.trigger_time || "").localeCompare(a.trigger_time || ""); });
+    var box = document.getElementById("hist-box");
+    if (!rows.length) { box.innerHTML = '<div class="empty" style="padding:30px">无匹配预警历史</div>'; return; }
+    var html = '<div style="border-left:2px solid var(--border);margin:6px 0 0 8px;padding-left:18px">';
+    rows.forEach(function (a) {
+      html += '<div style="position:relative;padding:8px 0;border-bottom:1px solid rgba(43,55,82,.4)">' +
+        '<span class="dot ' + esc(a.risk_level) + '" style="position:absolute;left:-25px;top:15px"></span>' +
+        "<b>" + esc(a.country_name || a.country) + "</b> " + a.year +
+        '　<span class="badge ' + esc(a.risk_level) + '">' + esc(a.risk_level_label || riskLabel[a.risk_level]) + "</span>" +
+        '　<span class="mono" style="color:var(--text-faint)">p=' + a.p_value.toFixed(3) + "</span>" +
+        "　<span style='color:var(--text-faint);font-size:12px'>" + fmtDate(a.trigger_time) + "</span>" +
+        "<div style='font-size:12px;color:var(--text-dim)'>" + esc(a.summary || a.trigger_reason || "") + "</div></div>";
+    });
+    html += "</div>";
+    box.innerHTML = html;
+  }
+  hLevelSel.addEventListener("change", renderHist);
+  hCountrySel.addEventListener("change", renderHist);
+  renderHist();
+})();
+</script>
+</body>
+</html>

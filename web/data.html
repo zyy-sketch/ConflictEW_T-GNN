@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>数据管理 · ConflictEW</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav id="topnav" class="topnav"></nav>
+<div class="page">
+  <h1 class="page-title">数据管理</h1>
+  <p class="page-sub">数据源状态 · 采集触发 · 面板数据预览 · 数据清单（F01-F04）</p>
+
+  <div class="grid two" style="margin-bottom:16px">
+    <div class="card">
+      <h3>数据源状态 <span class="hint">✅ 就绪 / ⛔ 缺失或降级</span></h3>
+      <table class="tbl" id="src-table">
+        <tr><th>数据源</th><th>版本</th><th>SHA256（前16位）</th><th>冻结时间</th><th>状态</th></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>触发数据采集 <span class="hint">F01 WDI 抓取 / F02 外部数据落库</span></h3>
+      <div class="form-row">
+        <label>年份范围</label>
+        <input class="input" id="f-start" type="number" min="1949" max="2024" value="1970" style="width:90px">
+        <span style="color:var(--text-dim)">至</span>
+        <input class="input" id="f-end" type="number" min="1949" max="2024" value="2024" style="width:90px">
+        <button class="btn" id="btn-fetch">触发采集</button>
+      </div>
+      <div id="fetch-error" class="form-error"></div>
+      <div id="fetch-progress" style="display:none">
+        <div class="progress"><div id="pbar" style="width:0%"></div></div>
+        <div class="mono" style="font-size:12px;color:var(--text-dim)" id="fetch-log"></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-faint)">
+        静态演示模式下模拟采集过程（前端无法直接调用后端）；完整采集请在项目目录运行
+        <span class="mono">python scripts/run_all.py --refresh</span>，真实 WDI API 超时将自动降级为缓存/模拟数据（PRD §5.3 异常路径）。
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h3>面板数据预览 <span class="hint" id="panel-hint"></span></h3>
+    <div style="overflow:auto;max-height:420px">
+      <table class="tbl" id="panel-table" style="font-size:12px"></table>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <h3>一致性审计 <span class="hint">F04 / §8.2</span></h3>
+      <div id="audit-box"></div>
+    </div>
+    <div class="card">
+      <h3>数据清单 manifest <span class="hint">版本戳 / SHA256 / 冻结</span></h3>
+      <pre class="log-box" id="manifest-box"></pre>
+    </div>
+  </div>
+
+  <div class="footer">数据合规：第三方数据只缓存清单不二次发布；Data Availability 指向官网（PRD §8.4）。</div>
+</div>
+
+<script src="vendor/echarts.min.js?v=20260826"></script>
+<script src="data/app_data.js?v=20260826"></script>
+<script src="js/common.js?v=20260826"></script>
+<script>
+(function () {
+  "use strict";
+  renderNav("data.html");
+  if (!hasData()) { renderNoData(document.querySelector(".page")); return; }
+  var d = D();
+
+  // ---------- 数据源状态表 ----------
+  var srcRows = d.sourceStatus || [];
+  var html = "";
+  srcRows.forEach(function (s) {
+    html += "<tr><td><b>" + esc(s.name) + "</b></td>" +
+      "<td>" + esc(s.version) + "</td>" +
+      '<td class="mono" style="color:var(--text-faint)">' + esc(s.sha256 || "—") + "</td>" +
+      "<td>" + fmtDate(s.frozen_at) + "</td>" +
+      "<td><span class='tag " + (s.status === "✅" ? "ok" : "bad") + "'>" + esc(s.status) + "</span></td></tr>";
+  });
+  document.getElementById("src-table").innerHTML =
+    "<tr><th>数据源</th><th>版本</th><th>SHA256（前16位）</th><th>冻结时间</th><th>状态</th></tr>" + html;
+
+  // ---------- 面板预览（分页） ----------
+  var preview = d.panelPreview || [];
+  var page = 0, pageSize = 20;
+  document.getElementById("panel-hint").textContent =
+    "共 " + d.panelStats.n_rows + " 行 × " + d.panelStats.n_countries + " 国 · 正样本率 " + fmtPct(d.panelStats.positive_rate, 2) +
+    " · 预览前 " + preview.length + " 行，每页 " + pageSize + " 行";
+  function renderPanel() {
+    var cols = preview.length ? Object.keys(preview[0]) : [];
+    var h = "<tr>" + cols.map(function (c) { return "<th>" + esc(c) + "</th>"; }).join("") + "</tr>";
+    var rows = preview.slice(page * pageSize, (page + 1) * pageSize).map(function (r) {
+      return "<tr>" + cols.map(function (c) {
+        var v = r[c];
+        var cls = (c === "y_onset" && v === 1) ? ' style="color:var(--red);font-weight:700"' :
+                  (c === "y_onset" ? ' style="color:var(--green)"' : "");
+        return "<td" + cls + ">" + (v === null || v === undefined ? "—" : esc(v)) + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    var nav = '<tr><td colspan="' + cols.length + '" style="text-align:right">' +
+      '<button class="btn ghost" onclick="window.__panelPrev()" ' + (page === 0 ? "disabled" : "") + ">上一页</button> " +
+      "第 " + (page + 1) + " 页 " +
+      '<button class="btn ghost" onclick="window.__panelNext()" ' + ((page + 1) * pageSize >= preview.length ? "disabled" : "") + ">下一页</button></td></tr>";
+    document.getElementById("panel-table").innerHTML = h + rows + nav;
+  }
+  window.__panelPrev = function () { if (page > 0) { page--; renderPanel(); } };
+  window.__panelNext = function () { if ((page + 1) * pageSize < preview.length) { page++; renderPanel(); } };
+  renderPanel();
+
+  // ---------- 一致性审计 ----------
+  var ps = d.panelStats;
+  var audit = [
+    ["面板行数", ps.n_rows, "≈160 国 × 55 年"],
+    ["国家数", ps.n_countries, "覆盖 ≥20 年才纳入（§8.2）"],
+    ["正样本率", fmtPct(ps.positive_rate, 2), "目标 2-3%"],
+    ["审计通过", ps.audit_passed ? "✅ 通过" : "⛔ 存在异常", ""],
+  ].map(function (r) {
+    return "<tr><td>" + r[0] + "</td><td style='font-weight:700'>" + r[1] + "</td><td style='color:var(--text-faint)'>" + esc(r[2]) + "</td></tr>";
+  }).join("");
+  var issues = (ps.audit_issues || []).map(function (i) {
+    return "<li style='color:var(--orange)'>" + esc(i) + "</li>";
+  }).join("");
+  document.getElementById("audit-box").innerHTML =
+    "<table class='tbl'>" + audit + "</table>" +
+    (issues ? "<div style='margin-top:10px'><b style='color:var(--orange)'>审计发现：</b><ul style='margin:6px 0 0 18px'>" + issues + "</ul></div>" : "");
+
+  // ---------- manifest ----------
+  document.getElementById("manifest-box").textContent =
+    JSON.stringify(d.manifest, null, 2);
+
+  // ---------- 采集触发（表单验证 + 模拟进度） ----------
+  document.getElementById("btn-fetch").addEventListener("click", function () {
+    var s = parseInt(document.getElementById("f-start").value, 10);
+    var e = parseInt(document.getElementById("f-end").value, 10);
+    var err = document.getElementById("fetch-error");
+    var valid = Number.isInteger(s) && Number.isInteger(e) && s >= 1949 && e <= 2024 && s <= e;
+    if (!valid) { err.textContent = "年份范围无效：需为 1949-2024 的整数且 start≤end"; return; }
+    err.textContent = "";
+    var box = document.getElementById("fetch-progress");
+    var bar = document.getElementById("pbar");
+    var log = document.getElementById("fetch-log");
+    box.style.display = "block";
+    var stages = [
+      "[WDI] 请求军费指标 MS.MIL.XPND.CD ...", "[WDI] 请求 GDP 增速 / 通胀 / 失业率 ...",
+      "[external] 检查 COW / Polity / ICOW / ATOP 数据源状态", "[clean] 编码映射与缺失值插值",
+      "[panel] 构建国家×年面板", "[audit] 一致性审计：正样本率 / 行数", "[done] 数据就绪 ✅"
+    ];
+    var i = 0;
+    var timer = setInterval(function () {
+      bar.style.width = Math.min(100, ((i + 1) / stages.length) * 100) + "%";
+      log.textContent = stages[i] || "";
+      i++;
+      if (i > stages.length) {
+        clearInterval(timer);
+        log.textContent = "[done] 数据已就绪（静态演示：模拟完成）→ 可前往预测分析页查看模型结果";
+        bar.style.width = "100%";
+      }
+    }, 450);
+  });
+
+  // ---------- run-log 展示 ----------
+  var logs = d.runLog || [];
+  if (logs.length) {
+    document.getElementById("fetch-log").textContent = logs.map(function (l) {
+      return "[" + fmtDate(l.timestamp) + "] " + l.stage + " " + JSON.stringify(Object.fromEntries(
+        Object.entries(l).filter(function (kv) { return kv[0] !== "stage" && kv[0] !== "timestamp"; })
+      ));
+    }).join("\n");
+    document.getElementById("fetch-log").style.color = "#9fd3a7";
+  }
+})();
+</script>
+</body>
+</html>

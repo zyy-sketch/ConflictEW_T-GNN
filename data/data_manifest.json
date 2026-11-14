@@ -1,0 +1,139 @@
+{
+  "project": "ConflictEW",
+  "version": "v1.0.0",
+  "seed": 20240101,
+  "generated_at": "2026-11-14T09:02:37+00:00",
+  "git_hash": "e54f97d93a076a1c2bce20712b385ea71d5bae9d",
+  "frozen": true,
+  "entries": {
+    "raw_real": {
+      "source": "raw_real",
+      "version": "1.0",
+      "path": "data\\raw_real.json",
+      "sha256": "4801b4842b8b053c9c7cdda10a5bada12cc9fd9005e16fde31d1a24582be1a7b",
+      "size_bytes": 2262996,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "raw_simulated": {
+      "source": "raw_simulated",
+      "version": "1.0",
+      "path": "data\\raw_simulated.json",
+      "sha256": "edf06eb76f1f14c1e026760e9bfe96c0c6ffc06c78042a286d0009632f84d0b9",
+      "size_bytes": 3143609,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "panel": {
+      "source": "panel",
+      "version": "1.0",
+      "path": "data\\panel.csv",
+      "sha256": "cb9c645f399d1903753f243b33f0033aad4199621b9160d0bf3a129cfffad0c6",
+      "size_bytes": 2093675,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "features": {
+      "source": "features",
+      "version": "1.0",
+      "path": "data\\features.csv",
+      "sha256": "61d64e80b380037bb3bb0d4fd8672a56edfbe105b38b21b52d0b43b888d0c3e4",
+      "size_bytes": 1009271,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "kalman_signals": {
+      "source": "kalman_signals",
+      "version": "1.0",
+      "path": "data\\kalman_signals.csv",
+      "sha256": "937d74696a9ac223f9aad10b39dd97c725c12c9864f31ec10404e848fc8de062",
+      "size_bytes": 257724,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "oos_predictions": {
+      "source": "oos_predictions",
+      "version": "1.0",
+      "path": "artifacts\\oos_predictions.csv",
+      "sha256": "8022c2b2b57fb7765c595e0b3c7339eed759b370358dbe3bfa651cb1f925f244",
+      "size_bytes": 193530,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "shap_values": {
+      "source": "shap_values",
+      "version": "1.0",
+      "path": "artifacts\\shap_values.csv",
+      "sha256": "e7c85c62e53ffe435ee9267d938d6ce6cf30ad65e1a27151397a0987853ed9bf",
+      "size_bytes": 1250943,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "metrics": {
+      "source": "metrics",
+      "version": "1.0",
+      "path": "artifacts\\metrics.json",
+      "sha256": "b49f700353a04b6f15fd43ce3d0de7192214a93beda5d1538a5326bd5591559b",
+      "size_bytes": 4636,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "atop": {
+      "source": "atop",
+      "version": "1.0",
+      "path": "data\\external\\atop.csv",
+      "sha256": "80ffbb75cd75834d8277a5e20c879783e80ef32e3ae7e7461bd701b1c130d1b3",
+      "size_bytes": 102083,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "countries": {
+      "source": "countries",
+      "version": "1.0",
+      "path": "data\\external\\countries.csv",
+      "sha256": "e6e06c7697917c1ede3c5d31e6e1955e49246386e23e7fe12ed7bb41aeb03dea",
+      "size_bytes": 6815,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "cow_adjacency": {
+      "source": "cow_adjacency",
+      "version": "1.0",
+      "path": "data\\external\\cow_adjacency.csv",
+      "sha256": "4fb94a20339c9173512f3cf158111e3255ff0da55912492c3b4fdfc05f48613f",
+      "size_bytes": 6144,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "cow_adjacency_normalized": {
+      "source": "cow_adjacency_normalized",
+      "version": "1.0",
+      "path": "data\\external\\cow_adjacency_normalized.csv",
+      "sha256": "4fb94a20339c9173512f3cf158111e3255ff0da55912492c3b4fdfc05f48613f",
+      "size_bytes": 6144,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "cow_conflicts": {
+      "source": "cow_conflicts",
+      "version": "1.0",
+      "path": "data\\external\\cow_conflicts.csv",
+      "sha256": "65979175af8813f1c7e507b84aa88960704d48a4989250f834ef6fe1c1d77f4b",
+      "size_bytes": 119094,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "icow": {
+      "source": "icow",
+      "version": "1.0",
+      "path": "data\\external\\icow.csv",
+      "sha256": "741757b64d6723eb2258764561eecf89e4fcd8ef5507238b0090966b98bd2b7a",
+      "size_bytes": 102082,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "polity_vdem": {
+      "source": "polity_vdem",
+      "version": "1.0",
+      "path": "data\\external\\polity_vdem.csv",
+      "sha256": "8dba2d30afd7ce25b4ae5ee746bc96629b66326b54c5263ef27652e1e1ac7877",
+      "size_bytes": 262419,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    },
+    "wdi": {
+      "source": "wdi",
+      "version": "cache",
+      "path": "C:\\Users\\yeezy\\Desktop\\ConflictEW_T-GNN\\data\\raw_real.json",
+      "sha256": "4801b4842b8b053c9c7cdda10a5bada12cc9fd9005e16fde31d1a24582be1a7b",
+      "size_bytes": 2262996,
+      "frozen_at": "2026-11-14T09:02:37+00:00"
+    }
+  },
+  "data_source": "cache"
+}
