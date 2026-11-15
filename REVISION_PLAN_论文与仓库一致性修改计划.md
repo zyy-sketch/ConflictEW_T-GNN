@@ -120,6 +120,13 @@
 2. **对四个外部 CSV 做真实性核查**：与 ICOW/ATOP/V-Dem/Polity 官方原始文件逐字段抽样比对；发现估算/填充字段 → 在 README/manifest 如实标注，并同步修正论文 TABLE IV 的数据来源描述。
 3. manifest 统一版本号 `v4-unified-2026-11-02`，与论文 release_package MANIFEST 互认。
 
+**✅ 执行记录（2026-11-15 完成，commit 2d274d6）**：
+- `scripts/fetch_external.py`：Polity5 / COW Intra-State Wars v5.1 / COW Direct Contiguity v3.2 三源自动下载（重复执行 SHA-256 逐字节一致）；ATOP/ICOW/V-Dem 官方站禁脚本直连 → 手动指引；全部来源+SHA-256 登记 `data/external/provenance.json`。
+- **真实性核查结论（P0-7 坐实）**：`data/external/*.csv` 系 `simulate.write_simulated_data()` 按面板骨架生成的**模拟数据**（官方 Polity5 中 CHN 2000–2010 polity2 恒 −7，仓库文件为 −10~+10 随机）。影响 F4/F5/F6 特征、F2 邻接输入与 **y_onset 标签**——论文全部 golden 值建立在"真实 WDI 军费 + 模拟外部协变量/标签"栈上，R-11 回写必须对齐（如实披露，或接真实标签重跑全部数值）。
+- 官方原件 → `data/external_real/` 转换（不覆盖 golden 基准）：polity.csv 149 国 6,667 行、cow_conflicts.csv 211 起 onset（AFG 1978 ✓）、cow_adjacency.csv 437 dyad；未匹配 103 实体入 unmatched.log。
+- WDI↔SIPRI 抽核超额完成（100 国-年，超计划 20 国）：中位差 0、86% <1%、65/100 全同。
+- 全链条文档 `PROVENANCE.md`（§3 诚实披露 / §4 SHA-256 / §8 R-11 联动）。
+
 ### R-9 【D12】补齐随文工件
 1. 移植 `bench_inference.py`（批量 1,650 行 n=50 + 单行 n=50×20，DMatrix 排除）→ 产出 `runtime_benchmark.json`；复用 `new/artifacts/xgb_model.json`（332,450 B = 论文 325 KB ✓，已在审查中确认字节数吻合）。
 2. `oos_predictions.csv` 拆分：`oos_test.csv`（fold=="test"，1,650 行，发布口径）/ `oos_val.csv`；README 说明。
