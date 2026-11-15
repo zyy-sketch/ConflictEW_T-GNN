@@ -46,7 +46,7 @@ data:
     timeout_sec: 15
     retries: 2
     cache_file: data/raw_real.json
-    simulated_fallback: true             # 失败时降级为模拟数据（PRD §5.3 异常路径）
+    simulated_fallback: false            # WDI 不可达时硬报错（R1 裁决 2026-11-15 采纳①：禁止静默降级；演示模式可临时改 true）
   panel:
     min_years: 20                        # 覆盖≥20 年的国家才纳入面板（§8.2）
     start_year: 1970

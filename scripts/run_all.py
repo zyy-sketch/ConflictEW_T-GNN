@@ -40,8 +40,8 @@ def main() -> int:
                       export_web=not args.no_web)
     print(json.dumps(summary, indent=2, ensure_ascii=False, default=str))
     if summary.get("data_source") == "simulated":
-        print("⚠ 数据源为模拟降级数据（simulated_fallback）：WDI 不可达时自动回退，"
-              "结果不可用于论文复现。请检查网络后重跑，或在 config.yaml 关闭 simulated_fallback。")
+        print("⚠ 数据源为模拟数据（source=simulated）：非官方 WDI 原件，结果不可用于论文复现。"
+              "请检查网络后重跑；如非有意开启，请将 config.yaml 的 data.wdi.simulated_fallback 改回 false。")
     print("=" * 64)
     print("✅ 管道完成。产物见 data/ 与 artifacts/，前端见 web/。")
     return 0

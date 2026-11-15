@@ -93,7 +93,7 @@ def get_military_and_economic_data(start_year: Optional[int] = None,
                                    force_refresh: bool = False) -> dict[str, Any]:
     """F01 统一入口：返回 {df, source, fetched_at, cache_used}。
 
-    优先级：真实 WDI 抓取 → data/raw_real.json 缓存 → 模拟数据（标记 simulated）。
+    优先级：data/raw_real.json 缓存 → 真实 WDI 抓取 → （仅 simulated_fallback=true 时）模拟数据，否则硬报错。
     返回结构同时被 F03 清洗与 F04 面板构建消费。
     """
     cfg_data = cfg()["data"]
@@ -116,7 +116,7 @@ def get_military_and_economic_data(start_year: Optional[int] = None,
         meta.log_stage("wdi_live_success", n_countries=df["iso3"].nunique(), years=f"{df['year'].min()}-{df['year'].max()}")
     except DataSourceUnavailable as e:
         meta.log_stage("wdi_live_failed", error=str(e))
-        if cfg_data["wdi"].get("simulated_fallback", True):
+        if cfg_data["wdi"].get("simulated_fallback", False):
             df = load_simulated_wdi()
             source = "simulated"
             fetched_at = meta.utcnow_iso()
