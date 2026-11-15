@@ -1,7 +1,5 @@
 """tests/test_kalman.py：Kalman LLT 滤波（PRD F05 验收 + §13.4 测试要求）。"""
 import numpy as np
-import pandas as pd
-import pytest
 
 from conflict_ew.kalman import ANOMALY_Z, _fit_single, _kalman_filter, compute_kalman_signals
 

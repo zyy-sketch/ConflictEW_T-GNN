@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, Optional
+from typing import Optional
+
+import pandas as pd
 
 from . import meta
 from .paths import cfg, get_path

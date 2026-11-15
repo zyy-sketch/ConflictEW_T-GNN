@@ -226,7 +226,7 @@ def train_and_predict(features: pd.DataFrame) -> dict:
     y_te = test["y_onset"]
     test_auc = float(roc_auc_score(y_te, oos[oos["fold"] == "test"]["p_conflict"])) \
         if len(np.unique(y_te)) > 1 else float("nan")
-    meta.log_stage("xgb_train", n_oos=len(oos), test_auc=round(test_auc, 4) if test_auc == test_auc else None,
+    meta.log_stage("xgb_train", n_oos=len(oos), test_auc=round(test_auc, 4) if not np.isnan(test_auc) else None,
                    calibration=params["calibration"])
     return {"oos_df": oos, "params": params, "model_version": MODEL_VERSION,
             "fold_results": run.fold_results, "test_auc": test_auc,

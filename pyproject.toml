@@ -29,3 +29,12 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+src = ["src", "scripts", "tests"]
+
+[tool.ruff.lint]
+# F=pyflakes（未用导入/变量、未定义名称）；I=import 排序；E9=语法/运行时级错误
+select = ["E9", "F", "I"]

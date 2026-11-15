@@ -46,7 +46,6 @@ def build_labels(df: pd.DataFrame, lookahead_months: int = 12) -> pd.DataFrame:
     """
     out = df.copy()
     out = out.sort_values(["iso3", "year"]).reset_index(drop=True)
-    years_per_iso3 = {iso3: g["year"].tolist() for iso3, g in out.groupby("iso3")}
     onset_flags: list[int] = []
     lookback_years = max(1, int(np.ceil(lookahead_months / 12)))
     for iso3, grp in out.groupby("iso3", sort=False):
@@ -54,7 +53,7 @@ def build_labels(df: pd.DataFrame, lookahead_months: int = 12) -> pd.DataFrame:
         for y in grp["year"]:
             window = [onset.get(y + k, 0) for k in range(0, lookback_years + 1)]
             # 未来 12 个月内首个冲突年：以"当年及未来一年出现 onset 且当年未处于持续冲突"计
-            y_flag = int(window[0] == 1 and sum(window[1:]) >= 0)  # 当年即 onset
+            y_flag = int(window[0] == 1)  # 当年即 onset（window 各项为 0/1，原恒真条件 sum≥0 已移除）
             if y_flag == 0 and y > onset.index.min():
                 # 前瞻：未来一年内有新 onset 且当年不在冲突进行中
                 active_now = int(grp.set_index("year").loc[y, "active"]) if y in grp.set_index("year").index else 0

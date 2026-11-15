@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from conflict_ew import meta  # noqa: E402
-from conflict_ew.paths import cfg, ensure_dirs, get_path, set_cwd  # noqa: E402
+from conflict_ew.paths import ensure_dirs, get_path, set_cwd  # noqa: E402
 
 
 def compute_hash_round(force_core: bool) -> str:
@@ -27,14 +27,14 @@ def compute_hash_round(force_core: bool) -> str:
         ensure_dirs()
         meta.init_run_log()
         meta.set_seed()
+        from conflict_ew.build_panel import build_panel
         from conflict_ew.data import clean_and_standardize, write_cleaned
         from conflict_ew.data_fetch import get_military_and_economic_data
-        from conflict_ew.build_panel import build_panel
-        from conflict_ew.kalman import compute_kalman_signals
-        from conflict_ew.factors import build_features
-        from conflict_ew.xgb import run_blocked_cv
-        from conflict_ew.shap_analysis import compute_shap
         from conflict_ew.external import ingest_external, merge_external_to_wdi
+        from conflict_ew.factors import build_features
+        from conflict_ew.kalman import compute_kalman_signals
+        from conflict_ew.shap_analysis import compute_shap
+        from conflict_ew.xgb import run_blocked_cv
 
         wdi = get_military_and_economic_data()
         ext = ingest_external()

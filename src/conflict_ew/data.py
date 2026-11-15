@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 from . import meta
-from .paths import cfg, get_path
+from .paths import get_path
 
 
 @dataclass

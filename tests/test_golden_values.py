@@ -15,8 +15,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from conflict_ew.baselines import (baseline_logistic_re, baseline_var,
-                                   paired_bootstrap)
+from conflict_ew.baselines import baseline_logistic_re, baseline_var, paired_bootstrap
 from conflict_ew.factors import get_factor_columns
 from conflict_ew.paths import get_path
 

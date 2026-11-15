@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
@@ -135,7 +136,7 @@ def run_ablation(features: pd.DataFrame) -> list[dict]:
             outs.append({"ablation": key, "label": spec["label"], "drop": spec.get("drop", []),
                          "keep_only": spec.get("keep_only", []), "test_auc": auc,
                          "n_feats": len(cols)})
-            meta.log_stage("ablation", ablation=key, test_auc=round(auc, 4) if auc == auc else None)
+            meta.log_stage("ablation", ablation=key, test_auc=round(auc, 4) if not np.isnan(auc) else None)
         except Exception as e:  # noqa: BLE001
             outs.append({"ablation": key, "label": spec["label"], "test_auc": None, "error": str(e)})
             meta.log_stage("ablation_failed", ablation=key, error=str(e))
@@ -196,7 +197,6 @@ def evaluate(features: pd.DataFrame, oos: pd.DataFrame, panel: pd.DataFrame,
 
     # ---- 训练期建议阈值（Youden's J / Fβ=2，只在验证折上选，防泄漏）----
     val = oos[oos["fold"].str.startswith("val_fold")].copy()
-    suggested_t = None
     if len(val):
         val_feats = features.set_index(["iso3", "year"])
         y_val = np.array([int(val_feats.loc[(r["country"], r["year"]), "y_onset"]) for _, r in val.iterrows()])
@@ -213,7 +213,6 @@ def evaluate(features: pd.DataFrame, oos: pd.DataFrame, panel: pd.DataFrame,
             fbeta = (1 + beta ** 2) * pr * r_ / (beta ** 2 * pr + r_)
             if fbeta > best_f:
                 best_f, best_t = fbeta, float(t)
-        suggested_t = best_t
         metrics["suggested_threshold"] = {"value": best_t, "fbeta": float(best_f), "beta": beta,
                                           "note": "训练期验证折确定（防泄漏）；运行阈值取 config.yaml 默认 0.7/0.5"}
         # @建议阈值口径的 Recall/Precision（与 @0.7 口径并列，展示模型判别能力）
@@ -227,8 +226,7 @@ def evaluate(features: pd.DataFrame, oos: pd.DataFrame, panel: pd.DataFrame,
             metrics["lead_time_at_suggested"] = lead_time_analysis(oos, panel, threshold=best_t)
 
     # ---- 基准对比（论文 Table III 规范实现，见 baselines.py）----
-    from .baselines import (baseline_logistic_re, baseline_var, delong_ci,
-                            paired_bootstrap, partial_auc)
+    from .baselines import baseline_logistic_re, baseline_var, paired_bootstrap
     bl_re = baseline_logistic_re(features, get_factor_columns())
     bl_var = baseline_var(features)
     metrics["baselines"] = {}

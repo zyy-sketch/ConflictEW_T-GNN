@@ -8,7 +8,6 @@
 """
 from __future__ import annotations
 
-import json
 import logging
 
 import numpy as np
@@ -50,7 +49,6 @@ def compute_shap(features: pd.DataFrame, model, oos_test: pd.DataFrame,
     dmat = DMatrix(X)
     margin = model.get_booster().predict(dmat, output_margin=True)
     logit_p = np.asarray(margin, dtype=float)
-    raw_proba = 1 / (1 + np.exp(-logit_p))
     phi_sum = sv.sum(axis=1)
     local_err = np.abs((base + phi_sum) - logit_p)
     max_err = float(local_err.max())

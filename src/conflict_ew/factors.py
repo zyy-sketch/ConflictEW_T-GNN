@@ -18,14 +18,13 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable
 
-import numpy as np
 import pandas as pd
 
 from . import meta
-from .paths import cfg, get_path
+from .paths import get_path
 
 
 @dataclass

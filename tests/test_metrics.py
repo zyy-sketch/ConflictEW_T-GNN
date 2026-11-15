@@ -1,10 +1,8 @@
 """tests/test_metrics.py：回测指标（PRD F09 / §13.4）。"""
 import numpy as np
 import pandas as pd
-import pytest
 
-from conflict_ew.metrics import (auc_ci, bh_fdr, brier_decomposition,
-                                 delong_auc_var, lead_time_analysis)
+from conflict_ew.metrics import auc_ci, bh_fdr, brier_decomposition, delong_auc_var, lead_time_analysis
 
 
 def test_delong_var_positive_and_auc_ci():

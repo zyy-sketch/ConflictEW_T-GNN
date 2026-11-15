@@ -4,7 +4,10 @@
 输出 artifacts/runtime_benchmark.json，供正文"实现与环境"段引用。
 所有数字均为实测，无估算。
 """
-import json, platform, sys, time, os
+import json
+import platform
+import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,14 +15,16 @@ sys.path.insert(0, str(ROOT / "src"))
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from conflict_ew.paths import get_path
+
 from conflict_ew.metrics import get_factor_columns
+from conflict_ew.paths import get_path
 
 MODEL = ROOT / "artifacts" / "xgb_model.json"
 feats = pd.read_csv(get_path("features_file"))
 fc = get_factor_columns()
 cv_cfg = None
 import yaml
+
 cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
 cv = cfg["model"]["cv"]; TS, TE = cv["test_start"], cv["test_end"]
 te = feats[(feats["year"] >= TS) & (feats["year"] <= TE)]

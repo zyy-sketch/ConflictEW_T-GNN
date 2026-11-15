@@ -110,8 +110,6 @@ def run_all(force_refresh: bool = False, generate_report_after: bool = True,
     train_res = train_and_predict(features)
 
     # ---- ⑧ SHAP 归因（F08）----
-    test_feats = features[(features["year"] >= cfg()["model"]["cv"]["test_start"]) &
-                          (features["year"] <= cfg()["model"]["cv"]["test_end"])]
     shap_res = compute_shap(features, train_res["run"].model_final, train_res["oos_df"],
                             calibrator=train_res["run"].calibrator)
 

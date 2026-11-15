@@ -34,9 +34,10 @@ def set_seed(seed: int = SEED) -> int:
         xgb.set_config(verbosity=0)
     except Exception:  # pragma: no cover - xgboost 未安装时忽略
         pass
+    # 极端受限环境（只读 environ）下赋值可能失败；静默忽略不影响 random/numpy 种子
     try:
         os.environ["PYTHONHASHSEED"] = str(seed)
-    except Exception:
+    except Exception:  # noqa: BLE001  # 防御性降级，见上注释
         pass
     return seed
 
@@ -50,12 +51,12 @@ def git_hash() -> str:
     try:
         r = subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True, text=True, timeout=5, check=False,
             cwd=str(get_path("data_dir").parent),
         )
         if r.returncode == 0:
             return r.stdout.strip()
-    except Exception:
+    except Exception:  # noqa: BLE001  # git 缺失/超时等一律降级为 nogit（run-log 用，非关键路径）
         pass
     return "nogit"
 
@@ -67,7 +68,7 @@ def env_versions() -> dict[str, str]:
         try:
             mod = __import__(mod_name)
             versions[mod_name] = getattr(mod, "__version__", "unknown")
-        except Exception:
+        except Exception:  # noqa: BLE001  # 任一依赖缺失记录 MISSING，不中断 manifest
             versions[mod_name] = "MISSING"
     return versions
 
@@ -147,7 +148,6 @@ def _manifest_entry(source: str, path: Path, version: str = "1.0") -> dict:
 
 def write_manifest(extra: Optional[list[dict]] = None, **meta: Any) -> dict:
     """生成 data_manifest.json（F03：版本戳/SHA256/冻结时间）。"""
-    data_dir = get_path("data_dir")
     files = [
         get_path("raw_real_file"),
         get_path("simulated_data_file"),

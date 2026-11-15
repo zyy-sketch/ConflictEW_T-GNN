@@ -13,13 +13,11 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
-from scipy.stats import norm as scipy_norm
 
 from . import meta
 from .paths import get_path
@@ -102,7 +100,7 @@ def _fit_single(country: str, y: np.ndarray, grid: list[tuple[float, float, floa
             _, _, _, _, ll = _kalman_filter(y, *params)
             if np.isfinite(ll) and ll > best[0]:
                 best = (ll, params)
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001  # 网格点数值异常（矩阵奇异等）→ 跳过该候选参数
             continue
 
     # 局部精化（L-BFGS-B，从网格最优点出发，方差参数对数空间）

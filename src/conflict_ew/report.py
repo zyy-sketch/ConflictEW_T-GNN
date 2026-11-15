@@ -11,13 +11,12 @@ import base64
 import io
 import json
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from . import meta
@@ -142,7 +141,6 @@ def generate_report(report_type: str = "quarterly", countries: Optional[list[str
     chains = ctx["chains"]
     metrics = ctx["metrics"]
     countries_df = ctx["countries"]
-    factors = ctx["factors"]
 
     latest = oos.sort_values("year").groupby("country").tail(1)
     if countries:

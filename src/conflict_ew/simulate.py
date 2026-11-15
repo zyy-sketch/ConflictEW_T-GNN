@@ -480,8 +480,8 @@ def write_external_from_wdi(wdi_df: pd.DataFrame, seed: int = 20240101) -> dict[
         "FCS", "HIC", "HPC", "IBD", "IBT", "IDA", "IDB", "IDX", "INX", "LAC",
         "LCN", "LDC", "LIC", "LMC", "LMY", "LTE", "LMI", "MIC", "MNA", "NOC",
         "OED", "OSS", "PRE", "PSS", "SAS", "SSA", "SSF", "SID", "TEA", "TEC",
-        "TLA", "TMN", "TSA", "TSS", "UMC", "WLD", "XKX", "CEB", "CMA", "EAP",
-        "EAR", "TAR", "TSM",
+        "TLA", "TMN", "TSA", "TSS", "UMC", "WLD", "XKX", "CEB", "CMA",
+        "TAR", "TSM",
     }
     df = df[~df["iso3"].isin(WB_AGGREGATES)].copy()
     # 军费覆盖 ≥20 年的国家才纳入（面板标准 §8.2）
@@ -508,7 +508,6 @@ def write_external_from_wdi(wdi_df: pd.DataFrame, seed: int = 20240101) -> dict[
 
     # ---- 冲突标签：真实军费冲击结构驱动 ----
     rows = []
-    n_countries = len(countries)
     for i, iso3 in enumerate(sorted(keep)):
         grp = df[df["iso3"] == iso3].sort_values("year")
         years = grp["year"].tolist()

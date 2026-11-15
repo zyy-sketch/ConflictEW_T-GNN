@@ -19,8 +19,6 @@ z 用预测值（训练期 z 用残差）——均为规范实现的原始行为
 """
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression

@@ -1,10 +1,7 @@
 """tests/test_agent.py：Agent 推理链（PRD §13.4 新增 / R4 应对）。"""
 import json
 
-import pytest
-
-from conflict_ew.agent import (generate_reasoning_chain, np_expit, np_logit,
-                               risk_level_of)
+from conflict_ew.agent import generate_reasoning_chain, np_expit, np_logit, risk_level_of
 
 
 def test_risk_level_thresholds():
