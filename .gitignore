@@ -40,3 +40,6 @@ data/external/raw/cow_isw/
 data/external/raw/cow_direct_contiguity/
 data/external/raw/cow_contiguity/
 data/external/raw/ColonialContiguity310.zip
+
+# Pipeline reports are regenerated per run (self-contained HTML); archive to Zenodo
+reports/
