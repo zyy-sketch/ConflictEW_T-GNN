@@ -2,8 +2,8 @@
   "project": "ConflictEW",
   "version": "v1.0.0",
   "seed": 20240101,
-  "generated_at": "2026-11-15T06:35:21+00:00",
-  "git_hash": "1ca26f0128cdf8f1e6db207d1d71c3f7711841d7",
+  "generated_at": "2026-11-15T06:53:44+00:00",
+  "git_hash": "bbe3b633e5031f2fe9ca13ae479b79974b831b8a",
   "frozen": true,
   "entries": {
     "raw_real": {
@@ -12,7 +12,7 @@
       "path": "data\\raw_real.json",
       "sha256": "4801b4842b8b053c9c7cdda10a5bada12cc9fd9005e16fde31d1a24582be1a7b",
       "size_bytes": 2262996,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "raw_simulated": {
       "source": "raw_simulated",
@@ -20,7 +20,7 @@
       "path": "data\\raw_simulated.json",
       "sha256": "edf06eb76f1f14c1e026760e9bfe96c0c6ffc06c78042a286d0009632f84d0b9",
       "size_bytes": 3143609,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "panel": {
       "source": "panel",
@@ -28,7 +28,7 @@
       "path": "data\\panel.csv",
       "sha256": "ea951c3cd101ac5870a21720b8c07a43589d28492e57a929670372bdb830263f",
       "size_bytes": 1774890,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "features": {
       "source": "features",
@@ -36,7 +36,7 @@
       "path": "data\\features.csv",
       "sha256": "bd08e0c0dcb1e29a64ddb9be65ad07a6e7f8fe9b73baf9455318418dc98a01c8",
       "size_bytes": 865786,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "kalman_signals": {
       "source": "kalman_signals",
@@ -44,7 +44,7 @@
       "path": "data\\kalman_signals.csv",
       "sha256": "937d74696a9ac223f9aad10b39dd97c725c12c9864f31ec10404e848fc8de062",
       "size_bytes": 257724,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "oos_predictions": {
       "source": "oos_predictions",
@@ -52,7 +52,7 @@
       "path": "artifacts\\oos_predictions.csv",
       "sha256": "78cb65a23987c625856e9ecb68d1fa9b73cc7706236575bae69fb0c5a1fc7d3c",
       "size_bytes": 173659,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "shap_values": {
       "source": "shap_values",
@@ -60,7 +60,7 @@
       "path": "artifacts\\shap_values.csv",
       "sha256": "54aad12369cf1f872e3bdd9e9500c89dbc00bcd422942b358d1aeb12f1a2fe16",
       "size_bytes": 1250068,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "metrics": {
       "source": "metrics",
@@ -68,7 +68,7 @@
       "path": "artifacts\\metrics.json",
       "sha256": "d2672debccb9a32b310ba49e1017fae620c54cb2b3a25d3b16bd2ca5a673cb03",
       "size_bytes": 369554,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "countries": {
       "source": "countries",
@@ -76,7 +76,7 @@
       "path": "data\\external_real\\countries.csv",
       "sha256": "e6e06c7697917c1ede3c5d31e6e1955e49246386e23e7fe12ed7bb41aeb03dea",
       "size_bytes": 6815,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "cow_adjacency": {
       "source": "cow_adjacency",
@@ -84,7 +84,7 @@
       "path": "data\\external_real\\cow_adjacency.csv",
       "sha256": "60b38d1393ac7d9655eed2d42b1681ec78018a2f3e53b6196efcd5cb70518228",
       "size_bytes": 3948,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "cow_adjacency_normalized": {
       "source": "cow_adjacency_normalized",
@@ -92,7 +92,7 @@
       "path": "data\\external_real\\cow_adjacency_normalized.csv",
       "sha256": "60b38d1393ac7d9655eed2d42b1681ec78018a2f3e53b6196efcd5cb70518228",
       "size_bytes": 3948,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "cow_conflicts": {
       "source": "cow_conflicts",
@@ -100,7 +100,7 @@
       "path": "data\\external_real\\cow_conflicts.csv",
       "sha256": "1f3b86df3f46cec47477e42339279a17d5109d8f2e5e79b1852a5bc1cc392a48",
       "size_bytes": 108860,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "cow_isw_country_years": {
       "source": "cow_isw_country_years",
@@ -108,7 +108,7 @@
       "path": "data\\external_real\\cow_isw_country_years.csv",
       "sha256": "fbbbc7bd5fb265509079505b29efc13d9719b8435020354a68d256ee84143725",
       "size_bytes": 12274,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "polity_vdem": {
       "source": "polity_vdem",
@@ -116,7 +116,7 @@
       "path": "data\\external_real\\polity_vdem.csv",
       "sha256": "0806aa75f78ff94cc04c1eaa153abc5119d1fab865d45858d61715b4010de265",
       "size_bytes": 97356,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     },
     "wdi": {
       "source": "wdi",
@@ -124,7 +124,7 @@
       "path": "C:\\Users\\yeezy\\Desktop\\ConflictEW_T-GNN\\data\\raw_real.json",
       "sha256": "4801b4842b8b053c9c7cdda10a5bada12cc9fd9005e16fde31d1a24582be1a7b",
       "size_bytes": 2262996,
-      "frozen_at": "2026-11-15T06:35:21+00:00"
+      "frozen_at": "2026-11-15T06:53:44+00:00"
     }
   },
   "data_source": "cache"

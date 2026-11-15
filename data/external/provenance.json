@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-15T06:32:01+00:00",
+  "generated_at": "2026-11-15T06:54:03+00:00",
   "policy": "data/external/*.csv 为 simulate.write_simulated_data() 的模拟产物（P0-7 披露）；官方原件在 data/external/raw/，转换产物在 data/external_real/。",
   "sources": {
     "polity5": {
@@ -15,7 +15,12 @@
     "ucdp_intrastate_onset": {
       "name": "UCDP Intrastate Country-Year Conflict Onset",
       "provider": "Uppsala Conflict Data Program (UCDP)",
-      "version": "v25.1 (1946-2024, onset1/newconf, gwno_a)"
+      "version": "v25.1 (1946-2024, onset1/newconf, gwno_a)",
+      "status": "ok",
+      "url": "https://ucdp.uu.se/downloads/onset/ucdp-intrastate-country-onset-251.csv",
+      "file": "data\\external\\raw\\ucdp-intrastate-country-onset-251.csv",
+      "sha256": "e2b59e65aaca88403991465b78fb407d7eddcefadeb18c7f1397bfe2ea83fe6a",
+      "bytes": 528718
     },
     "cow_intra_state_wars": {
       "name": "COW Intra-State Wars v5.1",
