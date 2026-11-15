@@ -11,13 +11,17 @@
 | 数据 | 角色 | 来源 | 状态 | 溯源等级 |
 |---|---|---|---|---|
 | 军费 / GDP 增速 / 通胀 / 失业率 | 主特征（F1–F3） | World Bank WDI API（实时抓取） | ✅ 真实，自动 | URL + 抓取时间戳 + SIPRI 抽核 |
+| **冲突标签 y（onset/active）** | **y 标签** | **UCDP Intrastate Country-Year Onset v25.1（1946–2024）** | ✅ 真实，自动 | URL + 版本 + SHA-256 |
 | Polity 政体指数 | 协变量（F4） | Center for Systemic Peace, Polity5 | ✅ 真实，自动下载 | URL + 版本 + SHA-256 |
-| 内战冲突标签 | **y 标签** | COW Intra-State Wars v5.1 | ✅ 真实，自动下载 | URL + 版本 + SHA-256 |
 | 国家邻接 | 协变量（F2 邻国项） | COW Direct Contiguity v3.2 | ✅ 真实，自动下载 | URL + 版本 + SHA-256 |
-| 同盟义务变化 | 协变量（F6） | ATOP 5.1 | ⚠️ 待手动下载 | 指引见 §6 |
-| 领土主张 | 协变量（F5） | ICOW Territorial Claims | ⚠️ 待手动下载 | 指引见 §6 |
-| V-Dem LDI | 协变量（F4） | V-Dem v15 | ⚠️ 待手动下载（需注册） | 指引见 §6 |
-| **`data/external/*.csv`（现行管道读取）** | 全部外部列 + y 标签 | `src/conflict_ew/simulate.py::write_simulated_data()` | ⛔ **模拟数据（披露见 §3）** | 脚本生成，SHA-256 已登记 |
+| COW 内战国-年（历史对照） | 参照 | COW Intra-State Wars v5.1（覆盖止于 ~2015） | ✅ 真实，自动下载 | URL + 版本 + SHA-256 |
+| 同盟义务变化 | 协变量（F6） | ATOP 5.1 | ⚠️ 待手动下载 → F6 降级为 0 | 指引见 §6 |
+| 领土主张 | 协变量（F5） | ICOW Territorial Claims | ⚠️ 待手动下载 → F5 降级为 0 | 指引见 §6 |
+| V-Dem LDI | 协变量（F4 之 vdem 分量） | V-Dem v15 | ⚠️ 待手动下载 → 该分量降级为 0 | 指引见 §6 |
+| `data/external/*.csv`（模拟栈） | **仅回归夹具** | `simulate.write_simulated_data()` | ⛔ 模拟数据；`data.external_source: simulated` 时才生效 | 脚本生成，SHA-256 已登记 |
+
+> **A2 决策（2026-11-15，作者确认）**：管道默认 `data.external_source: real`，消费 `data/external_real/`（官方原件转换产物）。
+> **论文全部数值以真实数据栈重跑为准**（见 §8）；模拟栈仅作为可复现性回归夹具保留。
 
 ---
 
@@ -30,9 +34,9 @@
   - 残差集中于 SIPRI 高频修订国（ISR/CAN/ZAF）与近年年份——性质为**数据库版本差**，非口径差。
   - 结论：WDI 转发口径成立，论文措辞修改后与仓库一致。
 
-## 3. ⛔ 诚实披露：现行 `data/external/*.csv` 为模拟数据（审查项 P0-7）
+## 3. ⛔ 历史披露：原 `data/external/*.csv` 为模拟数据（审查项 P0-7，已由 A2 决策修复）
 
-**事实**：仓库当前管道（`external.py → build_panel.py → factors.py`）读取的六个外部文件由
+**事实**：截至 2026-11-14，仓库管道消费的六个外部文件由
 `src/conflict_ew/simulate.py::write_simulated_data()` 按面板骨架（8,505 行，每国每年无缺口）生成：
 
 | 文件 | SHA-256（前 16 位） | 真实来源应为 |
@@ -49,9 +53,7 @@
 2. **行数**：四个外部文件行数完全相同（=面板行数+表头），而真实 ICOW 只覆盖主张涉入国、真实 ATOP 为同盟 dyadic 数据——完整性形态按面板填充。
 3. **生成代码**：`simulate.py` L430–435 可复现写出这四个文件。
 
-**影响范围**：`F4_polity_change` / `F4_vdem_ldi_change` / `F5_icow_claim_lag1` / `F6_atop_change_lag1` 四个特征、F2 的邻接矩阵输入，以及 **`y_onset` 标签（由模拟 cow_conflicts.csv 派生）**。
-**因此：论文全部 golden 数值（AUC 0.5379 等）建立在"真实 WDI 军费 + 模拟外部协变量/标签"的数据栈之上。**
-论文回写（R-11）必须与这一事实对齐：或在论文中如实说明外部协变量为模拟占位（方法学演示定位），或在接入真实标签后重跑全部数值。两者禁止混用口径。
+**影响范围（历史）**：2026-11-14 之前的论文 golden 值（AUC 0.5379 等）建立在此模拟栈上。**A2 决策后管道已切换真实数据并全量重跑**（见 §8）；模拟文件保留仅为回归夹具，`config.data.external_source: simulated` 显式开启才生效。
 
 ## 4. ✅ 官方原件（`data/external/raw/`，自动下载）
 
@@ -66,15 +68,17 @@
 
 ## 5. 转换产物（`data/external_real/`，官方原件 → 面板 schema）
 
-由 `scripts/fetch_external.py --convert` 生成，**不覆盖** `data/external/`（保护 golden 复现基准）：
+由 `scripts/fetch_external.py --convert` 生成，经 `data.external_source: real` 接入管道：
 
 | 产物 | 行数 | 转换规则 | 真实性抽检 |
 |---|---|---|---|
-| polity.csv | 6,667 行 / 149 国（1970–2018） | `polity2`；缺失码 −66/−77/−88→NaN；经 COW ccode→ISO3 | CHN 恒 −7、RUS 6、DEU 10、VEN 1999 后 8→5 ✓ |
-| cow_conflicts.csv | 819 国-战争年 / 211 起 onset | 参战国表逐段期间（StartYr/EndYr k=1..4）展开；onset=战争首年 | AFG 1978 四月革命 onset ✓、AGO 内战持续 ✓ |
+| cow_conflicts.csv（**主标签**） | 7,774 国-年 | **UCDP intrastate onset v25.1**：onset=onset1（新冲突首发/间隔≥2年重燃）、active=conflict_ids 非空；gwno_a→ISO3 | 2015–2024 有 41 起 onset（埃塞 2019、亚美-阿塞 2020、俄 2023 等均与史实吻合） |
+| cow_isw_country_years.csv（历史对照） | 875 国-战争年 | COW ISW v5.1；进行中战争（EndYr=-7/-8/-9）以覆盖末端 2015 删失 | AFG 1978 ✓、AGO ✓ |
+| polity_vdem.csv | 6,667 行 / 149 国（1970–2018） | `polity2`；缺失码 −66/−77/−88→NaN；经 COW ccode→ISO3 | CHN 恒 −7、RUS 6、DEU 10、VEN 1999 后 8→5 ✓ |
 | cow_adjacency.csv | 437 dyad | `contdir.csv` conttype≥1 且期间与 1970–2024 重叠 | — |
+| countries.csv | 165 国 | 手工编码表（cow_code↔ISO3 映射基准，非外部数据源） | — |
 
-**已知边界**：① 战争仍在进行时 `EndYr=−9` 的截尾段被丢弃（个别 onset 晚一年，如 AGO 1975→1976）；② 103 个未匹配实体（非国家行为体/已消亡国家编码）登记于 `external_real/unmatched.log`；③ `vdem_ldi` 列缺失（V-Dem 需手动获取，§6）。
+**降级边界（真实模式当前生效）**：ICOW/ATOP/V-Dem 官方站不可脚本直连（§6）→ `F5_icow_claim_lag1`、`F6_atop_change_lag1`、`F4_vdem_ldi_change` 置 0 运行，run-log 以 `external_missing ... degraded=true` 标记；polity 2019 年后为 NaN（XGBoost 原生处理）。
 
 ## 6. ⚠️ 待手动下载（官方站禁止脚本直连）
 
@@ -99,6 +103,14 @@ python scripts/verify_wdi_sipri.py
 
 ## 8. 与论文整改的联动（R-11）
 
-1. TABLE IV / Data Availability：军费措辞按 §2（决策 A）；外部数据源表述必须与 §3 披露一致。
-2. 若论文主张使用真实 Polity/ICOW/ATOP/COW 标签 → 必须先切换管道至 `data/external_real/`（含标签）并**重跑全部数值**（含 Table III、消融、lead time），golden 断言同步更新。
-3. ISO3 映射：论文改口 "mapping available in code repository"（决策 B）→ 指向 `data/external/countries.csv`。
+**✅ A2 决策已执行（2026-11-15）**：管道切换真实数据并全量重跑，golden 回归同步固化（`tests/test_golden_values.py` 等）。
+
+1. **论文全部数值以新栈重跑值回写**（对照表见 `docs/internal/R11_论文回写清单.md`）：
+   - 主模型 AUC 0.5447 [0.4928, 0.5967]；Brier 0.0391→0.0370（isotonic）
+   - 基线：LogReg(RE) 0.5716（配对差 −0.027，p=0.61 不显著）；VAR(2) 0.4479（+0.098，p=0.018 显著）
+   - 消融：去 F1 → 0.6801（**军费异常信号在真实标签下为负贡献**）；仅 F1 → 0.4859
+   - 测试窗 61 个真实正样本；lead-time 在原阈值定义下覆盖 0/61（指标需重新定义或如实报告退化）
+2. **论文标签口径必须改写**：由 "COW Intra-State Wars" 改为 **"UCDP Intrastate armed conflict onset (v25.1)"**，§III 标签定义同步（UCDP 25 battle-deaths / 国家内冲突口径），并披露 ICOW/ATOP/V-Dem 降级与 Polity5 覆盖至 2018。
+3. TABLE IV / Data Availability：军费措辞按 §2（决策 A）；数据来源逐项指向本文件与 `data/external/provenance.json`。
+4. ISO3 映射：论文改口 "mapping available in code repository"（决策 B）→ 指向 `data/external_real/countries.csv`。
+5. 结论/摘要必须按新叙事重写：真实标签下"军费异常信号无增量预警价值"的负结果 + 简单稀有事件 logit 占优。

@@ -1,0 +1,166 @@
+iso3,cow_code,name_en,name_zh,region
+AFG,700.0,Afghanistan,阿富汗,South Asia
+AGO,540.0,Angola,安哥拉,Sub-Saharan Africa
+ALB,339.0,Albania,阿尔巴尼亚,Europe
+ARB,,ARB,ARB,Other
+ARG,160.0,Argentina,阿根廷,Latin America
+ARM,371.0,Armenia,亚美尼亚,West Asia
+AUS,900.0,Australia,澳大利亚,Oceania
+AUT,305.0,Austria,奥地利,Europe
+AZE,373.0,Azerbaijan,阿塞拜疆,West Asia
+BDI,517.0,Burundi,布隆迪,Sub-Saharan Africa
+BEL,211.0,Belgium,比利时,Europe
+BEN,434.0,Benin,贝宁,Sub-Saharan Africa
+BFA,439.0,Burkina Faso,布基纳法索,Sub-Saharan Africa
+BGD,771.0,Bangladesh,孟加拉国,South Asia
+BGR,355.0,Bulgaria,保加利亚,Europe
+BHR,692.0,Bahrain,巴林,West Asia
+BIH,346.0,Bosnia and Herzegovina,波黑,Europe
+BLR,370.0,Belarus,白俄罗斯,Europe
+BLZ,,BLZ,BLZ,Other
+BOL,145.0,Bolivia,玻利维亚,Latin America
+BRA,140.0,Brazil,巴西,Latin America
+BRN,835.0,Brunei,文莱,Southeast Asia
+BWA,571.0,Botswana,博茨瓦纳,Sub-Saharan Africa
+CAF,482.0,Central African Republic,中非,Sub-Saharan Africa
+CAN,20.0,Canada,加拿大,North America
+CHE,225.0,Switzerland,瑞士,Europe
+CHL,155.0,Chile,智利,Latin America
+CHN,710.0,China,中国,East Asia
+CIV,437.0,Cote d'Ivoire,科特迪瓦,Sub-Saharan Africa
+CMR,471.0,Cameroon,喀麦隆,Sub-Saharan Africa
+COD,490.0,DR Congo,刚果（金）,Sub-Saharan Africa
+COG,484.0,Congo,刚果（布）,Sub-Saharan Africa
+COL,100.0,Colombia,哥伦比亚,Latin America
+CPV,,CPV,CPV,Other
+CRI,94.0,Costa Rica,哥斯达黎加,Latin America
+CUB,40.0,Cuba,古巴,Latin America
+CYP,352.0,Cyprus,塞浦路斯,West Asia
+CZE,316.0,Czechia,捷克,Europe
+DEU,255.0,Germany,德国,Europe
+DJI,522.0,Djibouti,吉布提,Sub-Saharan Africa
+DNK,390.0,Denmark,丹麦,Europe
+DOM,42.0,Dominican Republic,多米尼加,Latin America
+DZA,615.0,Algeria,阿尔及利亚,North Africa
+ECU,130.0,Ecuador,厄瓜多尔,Latin America
+EGY,651.0,Egypt,埃及,North Africa
+ESP,230.0,Spain,西班牙,Europe
+EST,366.0,Estonia,爱沙尼亚,Europe
+ETH,530.0,Ethiopia,埃塞俄比亚,Sub-Saharan Africa
+EUU,,EUU,EUU,Other
+FIN,375.0,Finland,芬兰,Europe
+FJI,950.0,Fiji,斐济,Oceania
+FRA,220.0,France,法国,Europe
+GAB,481.0,Gabon,加蓬,Sub-Saharan Africa
+GBR,200.0,United Kingdom,英国,Europe
+GEO,372.0,Georgia,格鲁吉亚,West Asia
+GHA,452.0,Ghana,加纳,Sub-Saharan Africa
+GIN,438.0,Guinea,几内亚,Sub-Saharan Africa
+GMB,,GMB,GMB,Other
+GNB,,GNB,GNB,Other
+GRC,350.0,Greece,希腊,Europe
+GTM,90.0,Guatemala,危地马拉,Latin America
+GUY,110.0,Guyana,圭亚那,Latin America
+HND,91.0,Honduras,洪都拉斯,Latin America
+HRV,344.0,Croatia,克罗地亚,Europe
+HTI,41.0,Haiti,海地,Latin America
+HUN,310.0,Hungary,匈牙利,Europe
+IDN,850.0,Indonesia,印度尼西亚,Southeast Asia
+IND,750.0,India,印度,South Asia
+IRL,205.0,Ireland,爱尔兰,Europe
+IRN,630.0,Iran,伊朗,West Asia
+IRQ,645.0,Iraq,伊拉克,West Asia
+ISL,395.0,Iceland,冰岛,Europe
+ISR,666.0,Israel,以色列,West Asia
+ITA,325.0,Italy,意大利,Europe
+JAM,51.0,Jamaica,牙买加,Latin America
+JOR,663.0,Jordan,约旦,West Asia
+JPN,740.0,Japan,日本,East Asia
+KAZ,705.0,Kazakhstan,哈萨克斯坦,Central Asia
+KEN,501.0,Kenya,肯尼亚,Sub-Saharan Africa
+KGZ,703.0,Kyrgyzstan,吉尔吉斯斯坦,Central Asia
+KHM,811.0,Cambodia,柬埔寨,Southeast Asia
+KOR,732.0,South Korea,韩国,East Asia
+KWT,690.0,Kuwait,科威特,West Asia
+LAO,812.0,Laos,老挝,Southeast Asia
+LBN,660.0,Lebanon,黎巴嫩,West Asia
+LBR,450.0,Liberia,利比里亚,Sub-Saharan Africa
+LBY,620.0,Libya,利比亚,North Africa
+LKA,780.0,Sri Lanka,斯里兰卡,South Asia
+LSO,570.0,Lesotho,莱索托,Sub-Saharan Africa
+LTU,368.0,Lithuania,立陶宛,Europe
+LUX,212.0,Luxembourg,卢森堡,Europe
+LVA,367.0,Latvia,拉脱维亚,Europe
+MAR,600.0,Morocco,摩洛哥,North Africa
+MDA,359.0,Moldova,摩尔多瓦,Europe
+MDG,580.0,Madagascar,马达加斯加,Sub-Saharan Africa
+MEA,,MEA,MEA,Other
+MEX,70.0,Mexico,墨西哥,Latin America
+MKD,343.0,North Macedonia,北马其顿,Europe
+MLI,432.0,Mali,马里,Sub-Saharan Africa
+MLT,338.0,Malta,马耳他,Europe
+MMR,775.0,Myanmar,缅甸,Southeast Asia
+MNE,,MNE,MNE,Other
+MNG,712.0,Mongolia,蒙古,East Asia
+MOZ,541.0,Mozambique,莫桑比克,Sub-Saharan Africa
+MRT,,MRT,MRT,Other
+MUS,,MUS,MUS,Other
+MWI,553.0,Malawi,马拉维,Sub-Saharan Africa
+MYS,820.0,Malaysia,马来西亚,Southeast Asia
+NAC,,NAC,NAC,Other
+NAM,565.0,Namibia,纳米比亚,Sub-Saharan Africa
+NER,436.0,Niger,尼日尔,Sub-Saharan Africa
+NGA,475.0,Nigeria,尼日利亚,Sub-Saharan Africa
+NIC,93.0,Nicaragua,尼加拉瓜,Latin America
+NLD,210.0,Netherlands,荷兰,Europe
+NOR,385.0,Norway,挪威,Europe
+NPL,790.0,Nepal,尼泊尔,South Asia
+NZL,920.0,New Zealand,新西兰,Oceania
+OMN,698.0,Oman,阿曼,West Asia
+PAK,770.0,Pakistan,巴基斯坦,South Asia
+PAN,95.0,Panama,巴拿马,Latin America
+PER,135.0,Peru,秘鲁,Latin America
+PHL,840.0,Philippines,菲律宾,Southeast Asia
+PNG,910.0,Papua New Guinea,巴布亚新几内亚,Oceania
+POL,290.0,Poland,波兰,Europe
+PRK,731.0,North Korea,朝鲜,East Asia
+PRT,235.0,Portugal,葡萄牙,Europe
+PRY,150.0,Paraguay,巴拉圭,Latin America
+PST,,PST,PST,Other
+QAT,694.0,Qatar,卡塔尔,West Asia
+ROU,360.0,Romania,罗马尼亚,Europe
+RUS,365.0,Russia,俄罗斯,Europe
+RWA,516.0,Rwanda,卢旺达,Sub-Saharan Africa
+SAU,670.0,Saudi Arabia,沙特阿拉伯,West Asia
+SDN,625.0,Sudan,苏丹,North Africa
+SEN,433.0,Senegal,塞内加尔,Sub-Saharan Africa
+SGP,830.0,Singapore,新加坡,Southeast Asia
+SLE,451.0,Sierra Leone,塞拉利昂,Sub-Saharan Africa
+SLV,92.0,El Salvador,萨尔瓦多,Latin America
+SOM,520.0,Somalia,索马里,Sub-Saharan Africa
+SRB,345.0,Serbia,塞尔维亚,Europe
+SVK,317.0,Slovakia,斯洛伐克,Europe
+SVN,349.0,Slovenia,斯洛文尼亚,Europe
+SWE,380.0,Sweden,瑞典,Europe
+SWZ,572.0,Eswatini,斯威士兰,Sub-Saharan Africa
+SYC,,SYC,SYC,Other
+SYR,652.0,Syria,叙利亚,West Asia
+TCD,483.0,Chad,乍得,Sub-Saharan Africa
+TGO,461.0,Togo,多哥,Sub-Saharan Africa
+THA,800.0,Thailand,泰国,Southeast Asia
+TJK,702.0,Tajikistan,塔吉克斯坦,Central Asia
+TLS,860.0,Timor-Leste,东帝汶,Southeast Asia
+TTO,52.0,Trinidad and Tobago,特立尼达和多巴哥,Latin America
+TUN,616.0,Tunisia,突尼斯,North Africa
+TUR,640.0,Turkey,土耳其,West Asia
+TZA,510.0,Tanzania,坦桑尼亚,Sub-Saharan Africa
+UGA,500.0,Uganda,乌干达,Sub-Saharan Africa
+UKR,369.0,Ukraine,乌克兰,Europe
+URY,165.0,Uruguay,乌拉圭,Latin America
+USA,2.0,United States,美国,North America
+VEN,101.0,Venezuela,委内瑞拉,Latin America
+VNM,816.0,Vietnam,越南,Southeast Asia
+YEM,679.0,Yemen,也门,West Asia
+ZAF,560.0,South Africa,南非,Sub-Saharan Africa
+ZMB,551.0,Zambia,赞比亚,Sub-Saharan Africa
+ZWE,552.0,Zimbabwe,津巴布韦,Sub-Saharan Africa

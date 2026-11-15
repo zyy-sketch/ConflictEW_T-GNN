@@ -49,6 +49,14 @@ SOURCES: dict[str, dict] = {
         "version": "p5v2018 (Polity5d annual, polity2)",
         "manual": None,  # 可自动下载
     },
+    "ucdp_intrastate_onset": {
+        "name": "UCDP Intrastate Country-Year Conflict Onset",
+        "provider": "Uppsala Conflict Data Program (UCDP)",
+        "url": "https://ucdp.uu.se/downloads/onset/ucdp-intrastate-country-onset-251.csv",
+        "dest": "ucdp-intrastate-country-onset-251.csv",
+        "version": "v25.1 (1946-2024, onset1/newconf, gwno_a)",
+        "manual": None,
+    },
     "cow_intra_state_wars": {
         "name": "COW Intra-State Wars v5.1",
         "provider": "Correlates of War Project",
@@ -165,8 +173,14 @@ def convert_polity(c2i: dict[int, str], unmatched: set[str]) -> pd.DataFrame:
 
 
 def convert_cow_conflicts(c2i: dict[int, str], unmatched: set[str]) -> pd.DataFrame:
+    """COW Intra-State Wars v5.1 → 国-年标签（历史对照用，非主标签源）。
+
+    数据集覆盖止于 ~2015（max StartYr=2014，closed-war max EndYr=2015）；
+    进行中战争 EndYr∈{-7,-8,-9} 以数据集覆盖末端 2015 删失（不丢弃）。
+    """
     src = RAW / "cow_isw" / "INTRA-STATE_State_participants v5.1 CSV.csv"
     df = pd.read_csv(src, encoding="latin-1")
+    coverage_end = 2015  # v5.1 数据覆盖末端（closed wars 的最大 EndYr）
     rows: list[tuple[str, int, int, int]] = []  # iso3, year, onset, active
     for _, r in df.iterrows():
         for side_ccode in (r["CcodeA"], r["CcodeB"]):
@@ -186,28 +200,43 @@ def convert_cow_conflicts(c2i: dict[int, str], unmatched: set[str]) -> pd.DataFr
                 sy, ey = r.get(f"StartYr{k}"), r.get(f"EndYr{k}")
                 try:
                     sy = int(float(sy))
-                    ey = int(float(ey))
                 except (ValueError, TypeError):
                     continue
-                if sy > 0 and ey > 0 and ey >= sy:
+                ey = int(float(ey)) if pd.notna(ey) else -9
+                if sy > 0:
                     spans.append((sy, ey))
             if not spans:
                 continue
             first_start = min(s for s, _ in spans)
-            last_end = max(e for _, e in spans)
-            for y in range(last_end, first_start - 1, -1):  # 覆盖到面板下限 1970 由调用方裁剪
+            ends = [e if e > 0 else coverage_end for _, e in spans]
+            last_end = max(ends)
+            for y in range(last_end, first_start - 1, -1):
                 rows.append((iso3, y, int(y == first_start), 1))
     out = pd.DataFrame(rows, columns=["iso3", "year", "onset", "active"])
-    # 同国同年多场战争：active 取 max，onset 仅在该年首场战争开始时为 1
     g = out.groupby(["iso3", "year"], as_index=False).agg(
-        onset=("onset", lambda s: int(s.max() > 0 and s.idxmax() == s.index[0]) if s.max() > 0 else 0),
-        active=("active", "max"))
-    # onset 修正：只要该年有任一战争首年开始即 onset
-    first_starts = out.groupby(["iso3", "year"])["onset"].max().groupby(level=[0, 1]).max()
-    g = g.set_index(["iso3", "year"])
-    g["onset"] = first_starts
-    g = g.reset_index()
+        onset=("onset", "max"), active=("active", "max"))
     return g[g["year"] >= 1970].sort_values(["iso3", "year"]).reset_index(drop=True)
+
+
+def convert_ucdp_labels(c2i: dict[int, str], unmatched: set[str]) -> pd.DataFrame:
+    """UCDP Intrastate Country-Year Onset v25.1 → 国-年标签（主标签源）。
+
+    - onset = onset1（UCDP 新冲突首发年：冲突首年或间隔 ≥2 年后重燃）
+    - active = conflict_ids 非空（该国当年存在 ≥25 battle deaths 的国家内冲突）
+    - gwno_a（Gleditsch-Ward/COW 编码）经 countries.csv.cow_code 映射 ISO3
+    """
+    src = RAW / "ucdp-intrastate-country-onset-251.csv"
+    df = pd.read_csv(src)
+    df.columns = [c.strip() for c in df.columns]
+    df = df[(df["year"] >= 1970) & (df["year"] <= 2024)]
+    df["iso3"] = df["gwno_a"].map(lambda g: c2i.get(int(g)) if pd.notna(g) else None)
+    for g in df.loc[df["iso3"].isna(), "gwno_a"].dropna().unique():
+        name = df.loc[df["gwno_a"] == g, "name"].iloc[0] if (df["gwno_a"] == g).any() else "?"
+        unmatched.add(f"ucdp:gwno{int(g)}({name})")
+    out = df[df["iso3"].notna()].copy()
+    out["onset"] = pd.to_numeric(out["onset1"], errors="coerce").fillna(0).astype(int)
+    out["active"] = out["conflict_ids"].notna().astype(int)
+    return out[["iso3", "year", "onset", "active"]].sort_values(["iso3", "year"]).reset_index(drop=True)
 
 
 def convert_cow_adjacency(c2i: dict[int, str], unmatched: set[str]) -> pd.DataFrame:
@@ -242,17 +271,26 @@ def convert_all() -> dict[str, dict]:
 
     try:
         pol = convert_polity(c2i, unmatched)
-        pol.to_csv(EXT_REAL / "polity.csv", index=False)
-        report["polity.csv"] = {"rows": len(pol), "source": "Polity5 p5v2018.xls", "onsets_or_positives": int(pol["polity_score"].notna().sum())}
+        pol.to_csv(EXT_REAL / "polity_vdem.csv", index=False)  # 管道 schema 文件名（仅 polity_score，vdem_ldi 待手动）
+        report["polity_vdem.csv"] = {"rows": len(pol), "source": "Polity5 p5v2018.xls", "non_null": int(pol["polity_score"].notna().sum())}
     except Exception as e:  # noqa: BLE001
-        report["polity.csv"] = {"error": f"{type(e).__name__}: {e}"}
+        report["polity_vdem.csv"] = {"error": f"{type(e).__name__}: {e}"}
 
     try:
-        conf = convert_cow_conflicts(c2i, unmatched)
-        conf.to_csv(EXT_REAL / "cow_conflicts.csv", index=False)
-        report["cow_conflicts.csv"] = {"rows": len(conf), "source": "COW Intra-State Wars v5.1 participants", "onsets": int(conf["onset"].sum()), "active_years": int(conf["active"].sum())}
+        # 主标签源：UCDP（覆盖 1946-2024，支撑 2015-2024 测试窗）
+        ucdp = convert_ucdp_labels(c2i, unmatched)
+        ucdp.to_csv(EXT_REAL / "cow_conflicts.csv", index=False)  # 管道 schema 文件名
+        report["cow_conflicts.csv"] = {"rows": len(ucdp), "source": "UCDP intrastate onset v25.1", "onsets": int(ucdp["onset"].sum()), "active_years": int(ucdp["active"].sum())}
     except Exception as e:  # noqa: BLE001
         report["cow_conflicts.csv"] = {"error": f"{type(e).__name__}: {e}"}
+
+    try:
+        # 历史对照：COW ISW v5.1（覆盖止于 2015，不作主标签）
+        cow = convert_cow_conflicts(c2i, unmatched)
+        cow.to_csv(EXT_REAL / "cow_isw_country_years.csv", index=False)
+        report["cow_isw_country_years.csv"] = {"rows": len(cow), "source": "COW Intra-State Wars v5.1", "onsets": int(cow["onset"].sum())}
+    except Exception as e:  # noqa: BLE001
+        report["cow_isw_country_years.csv"] = {"error": f"{type(e).__name__}: {e}"}
 
     try:
         adj = convert_cow_adjacency(c2i, unmatched)

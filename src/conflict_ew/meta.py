@@ -162,11 +162,12 @@ def write_manifest(extra: Optional[list[dict]] = None, **meta: Any) -> dict:
     for i, p in enumerate(files):
         src = p.stem if p.exists() else p.name
         entries[src] = _manifest_entry(src, p)
-    for ext_dir in ("external_dir",):
-        d = get_path(ext_dir)
-        if d.exists():
-            for f in sorted(d.glob("*.csv")):
-                entries[f.stem] = _manifest_entry(f.stem, f)
+    from .external import active_external_dir
+
+    d = active_external_dir()
+    if d.exists():
+        for f in sorted(d.glob("*.csv")):
+            entries[f.stem] = _manifest_entry(f.stem, f)
     if extra:
         for e in extra:
             entries[e.get("source", e.get("path", "extra"))] = e

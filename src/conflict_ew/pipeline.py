@@ -15,7 +15,7 @@ from .alerts import append_alert_history, scan_alerts
 from .build_panel import build_panel
 from .data import clean_and_standardize, write_cleaned
 from .data_fetch import get_military_and_economic_data
-from .external import ingest_external, merge_external_to_wdi
+from .external import active_external_dir, ingest_external, merge_external_to_wdi
 from .factors import build_features, save_factor_registry
 from .kalman import compute_kalman_signals
 from .metrics import evaluate
@@ -53,30 +53,39 @@ def run_all(force_refresh: bool = False, generate_report_after: bool = True,
     data_source = wdi["source"]
 
     # ---- ② 外部数据接入（F02）----
-    # 外部静态数据集（COW/Polity/ICOW/ATOP）按 §13.4 Mock 需求降级生成：
-    # WDI 真实 → 基于真实军费生成模拟标签；WDI 模拟 → 完整模拟数据集。
-    # 固定种子 ⇒ 每次生成结果一致（可复现）；版本戳保证生成逻辑变更后自动重建。
+    # external_source=simulated：按 §13.4 Mock 需求降级生成（固定种子可复现）。
+    # external_source=real：读取官方原件转换产物（data/external_real，见 PROVENANCE.md），
+    #   缺文件直接报错——真实模式下禁止静默生成模拟标签（R-8/P0-7）。
     EXT_GEN_VERSION = "8"
-    ext_dir = get_path("external_dir")
-    gen_ver_path = ext_dir / ".gen_version"
-    ext_missing = (not (ext_dir / "countries.csv").exists()) or \
-                  (not (ext_dir / "cow_conflicts.csv").exists()) or \
-                  (not gen_ver_path.exists()) or \
-                  (gen_ver_path.read_text(encoding="utf-8").strip() != EXT_GEN_VERSION)
-    if ext_missing:
-        from .simulate import write_external_from_wdi, write_simulated_data
+    use_real_external = (cfg().get("data", {}) or {}).get("external_source") == "real"
+    ext_dir = active_external_dir()
+    if use_real_external:
+        missing = [f for f in ("countries.csv", "cow_conflicts.csv")
+                   if not (ext_dir / f).exists()]
+        if missing:
+            raise FileNotFoundError(
+                f"external_source=real 但 {ext_dir} 缺少 {missing}；"
+                f"先运行 scripts/fetch_external.py --convert 生成官方原件转换产物")
+    else:
+        gen_ver_path = ext_dir / ".gen_version"
+        ext_missing = (not (ext_dir / "countries.csv").exists()) or \
+                      (not (ext_dir / "cow_conflicts.csv").exists()) or \
+                      (not gen_ver_path.exists()) or \
+                      (gen_ver_path.read_text(encoding="utf-8").strip() != EXT_GEN_VERSION)
+        if ext_missing:
+            from .simulate import write_external_from_wdi, write_simulated_data
 
-        if data_source == "wdi-live" or data_source == "cache":
-            write_external_from_wdi(wdi["df"])
-        else:
-            write_simulated_data()
-        gen_ver_path.write_text(EXT_GEN_VERSION, encoding="utf-8")
+            if data_source == "wdi-live" or data_source == "cache":
+                write_external_from_wdi(wdi["df"])
+            else:
+                write_simulated_data()
+            gen_ver_path.write_text(EXT_GEN_VERSION, encoding="utf-8")
     ext = ingest_external()
-    if len(ext.conflicts) == 0:  # 冲突标签缺失则强制生成
+    if not use_real_external and len(ext.conflicts) == 0:  # 冲突标签缺失则强制生成（仅模拟模式）
         from .simulate import write_external_from_wdi
 
         write_external_from_wdi(wdi["df"])
-        gen_ver_path.write_text(EXT_GEN_VERSION, encoding="utf-8")
+        (get_path("external_dir") / ".gen_version").write_text(EXT_GEN_VERSION, encoding="utf-8")
         ext = ingest_external()
 
     # ---- ③ 清洗与标准化（F03）----

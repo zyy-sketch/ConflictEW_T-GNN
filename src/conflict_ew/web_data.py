@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from . import meta
+from .external import active_external_dir
 from .paths import cfg, get_path
 
 # GeoJSON 名称修正表（world-geo.json 官方名称 → 国家表 name_en）
@@ -85,7 +86,7 @@ def export_web_data(out_path=None) -> dict[str, Any]:
     t = cfg()["eval"]["thresholds"]
 
     # ---- 加载产物 ----
-    countries = pd.read_csv(get_path("external_dir") / "countries.csv")
+    countries = pd.read_csv(active_external_dir() / "countries.csv")
     oos = pd.read_csv(get_path("oos_file"))
     panel = pd.read_csv(get_path("panel_file"))
     signals = pd.read_csv(get_path("kalman_signals_file"))

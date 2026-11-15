@@ -14,7 +14,8 @@ paths:
   web_dir: web
   raw_real_file: data/raw_real.json       # WDI 真实抓取缓存（F01）
   simulated_data_file: data/raw_simulated.json   # 模拟降级数据（数据源不可达时）
-  external_dir: data/external              # 外部静态数据落库目录（F02）
+  external_dir: data/external              # 模拟外部数据目录（simulate.py 管理）
+  external_dir_real: data/external_real    # 官方原件转换产物（R-8；见 PROVENANCE.md）
   panel_file: data/panel.csv               # 国家×年面板（F04）
   manifest_file: data/data_manifest.json   # 数据清单（F03）
   features_file: data/features.csv         # 6 因子特征（F06）
@@ -33,6 +34,7 @@ paths:
   threshold_config_section: eval.thresholds  # 阈值写入 config.yaml 的路径（F16）
 
 data:
+  external_source: real                 # real=官方原件转换产物 | simulated=模拟占位（P0-7）
   wdi:
     base_url: https://api.worldbank.org/v2/country/all/indicator/
     indicators:                          # 经济协变量（F6 F3 经济压力因子）

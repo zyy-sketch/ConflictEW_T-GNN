@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from . import meta
+from .external import active_external_dir
 from .paths import cfg, get_path
 
 # matplotlib 中文字体（Windows 微软雅黑，回退系统默认）
@@ -258,7 +259,7 @@ def _load_report_context() -> dict:
     ctx["oos_test"] = oos[oos["fold"] == "test"]
     ctx["shap_df"] = pd.read_csv(get_path("shap_file"))
     ctx["factors"] = pd.read_csv(get_path("features_file"))
-    ctx["countries"] = pd.read_csv(get_path("external_dir") / "countries.csv")
+    ctx["countries"] = pd.read_csv(active_external_dir() / "countries.csv")
     with open(get_path("metrics_file"), "r", encoding="utf-8") as f:
         ctx["metrics"] = json.load(f)
     chain_path = get_path("artifact_dir") / "reasoning_chains.json"

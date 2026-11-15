@@ -16,7 +16,7 @@ from typing import Any, Optional
 import pandas as pd
 
 from . import meta
-from .paths import get_path
+from .paths import cfg, get_path
 
 logger = logging.getLogger("conflict_ew.external")
 
@@ -66,13 +66,25 @@ def _normalize_frame(df: pd.DataFrame, col_map: dict[str, str]) -> pd.DataFrame:
     return out[keep] if keep else out
 
 
+def active_external_dir() -> Path:
+    """按 config.data.external_source 解析当前生效的外部数据目录。
+
+    - "simulated"（默认）：data/external —— simulate.py 生成/管理的目录
+    - "real"：paths.external_dir_real（data/external_real）—— 官方原件转换产物
+    """
+    source = (cfg().get("data", {}) or {}).get("external_source", "simulated")
+    if source == "real" and cfg()["paths"].get("external_dir_real"):
+        return get_path("external_dir_real")
+    return get_path("external_dir")
+
+
 def ingest_external(ext_dir: Optional[Path] = None, write_unmatched: bool = True) -> ExternalData:
     """F02 主入口：读取并归一化全部外部数据集。
 
-    :param ext_dir: 外部数据目录（默认 data/external）
+    :param ext_dir: 外部数据目录（默认按 data.external_source 解析）
     :param write_unmatched: 是否将未匹配国家写入 unmatched_countries.log
     """
-    ext_dir = ext_dir or get_path("external_dir")
+    ext_dir = ext_dir or active_external_dir()
     ext_dir.mkdir(parents=True, exist_ok=True)
     data = ExternalData()
     source_status: dict[str, dict] = {}
@@ -156,12 +168,15 @@ def merge_external_to_wdi(wdi: pd.DataFrame, ext: ExternalData) -> pd.DataFrame:
             for c in cols:
                 if c not in df.columns:
                     df[c] = 0
+            # 真实来源为稀疏表（仅事件年有行）：标签列缺失年份必须显式置 0
+            if attr == "conflicts":
+                df[["onset", "active"]] = df[["onset", "active"]].fillna(0)
         else:
             for c in cols:
                 df[c] = 0
             meta.log_stage("external_missing", source=label, degraded=True)
     # 邻接矩阵单独保存（factors.py 使用）
     if len(ext.adjacency) > 0:
-        adj_path = get_path("external_dir") / "cow_adjacency_normalized.csv"
+        adj_path = active_external_dir() / "cow_adjacency_normalized.csv"
         ext.adjacency.to_csv(adj_path, index=False)
     return df
