@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        python-version: ["3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install xlrd>=2.0.1
+
+      - name: Deterministic fetch-provenance registry (offline)
+        run: python scripts/fetch_external.py --no-fetch
+
+      - name: Test suite (leakage + golden regressions)
+        run: python -m pytest -q
+
+      - name: Golden headline values smoke check
+        run: |
+          python - <<'PY'
+          import json
+          m = json.load(open("artifacts/metrics.json")) if __import__("pathlib").Path("artifacts/metrics.json").exists() else None
+          if m is None:
+              print("metrics.json absent (pipeline not run in CI) - skipping")
+          else:
+              auc = m["model"]["auc"]
+              assert abs(auc - 0.5379) < 0.001, f"AUC drifted: {auc}"
+              print("golden AUC ok:", auc)
+          PY

@@ -30,3 +30,13 @@ legacy_local/
 
 # leftover app-server shell from restructure
 new/
+
+# Internal working docs & unpublished manuscript (never publish)
+docs/internal/
+
+# raw/ official archives: only the SHA-256-registered archives are committed;
+# unzipped trees and exploratory downloads stay local
+data/external/raw/cow_isw/
+data/external/raw/cow_direct_contiguity/
+data/external/raw/cow_contiguity/
+data/external/raw/ColonialContiguity310.zip

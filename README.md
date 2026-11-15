@@ -1,193 +1,73 @@
-# Conflict Early Warning — T-GNN Command Platform
+# Conflict Early Warning: Kalman-Filter Signal Extraction with Multi-Factor XGBoost
 
-基于时序图神经网络（T-GNN）的全球冲突风险智能预警平台。
+Reproducible research pipeline for the manuscript *"Multi-Indicator Conflict Early Warning: A Kalman Filter Approach"* — data ingestion → Kalman local-linear-trend signal extraction → multi-factor features → XGBoost with blocked temporal cross-validation → baseline comparisons → uncertainty quantification.
 
-> 本项目包含两个互补产物：
-> 1. **可复现研究管道（Python）** —— SCI 投稿的正式方法实现（数据 → Kalman 信号 → XGBoost blocked CV → DeLong/bootstrap CI → 矢量图）。见下文「可复现研究管道」。
-> 2. **交互式仪表板（`dashboard_v3.html`）** —— 只做结果展示与交互，不承担计算职责。
+> **Honest-results statement.** This is a methods/reproducibility release, not a high-accuracy forecasting claim. On the released data stack the multi-factor model reaches **AUC 0.538 (DeLong 95% CI [0.466, 0.610])** on strictly out-of-sample years (2015–2024), and **both published baselines dominate it** (regularized logistic 0.550, pooled VAR(2) 0.591). We report this negative result as-is; see the manuscript and `docs/` for the discussion.
 
----
+## What is inside
 
-## 可复现研究管道（Python · SCI 投稿用）
+| Path | Content |
+|---|---|
+| `src/conflict_ew/` | Pipeline library (data, Kalman, factors, XGBoost, baselines, metrics, agent) |
+| `scripts/` | Stage runners `00`–`06`, sensitivity/calibration `09`–`11`, release tooling `12`, provenance `fetch_external.py`, `verify_wdi_sipri.py` |
+| `tests/` | 32 tests incl. look-ahead-leakage suite (L1–L5) and golden-value regressions |
+| `config.yaml` | Every hyperparameter, seed, and path (no magic numbers in code) |
+| `PROVENANCE.md` | Data source chain, SHA-256 registry, and a required disclosure on simulated external covariates |
+| `data/external/raw/` | Official raw downloads (Polity5, COW Intra-State Wars v5.1, COW Direct Contiguity v3.2) |
+| `data/external_real/` | Converted official originals (not yet wired into the pipeline) |
+| `results_report.html` | Self-contained results report generated from pipeline artifacts |
+| `dashboard_v3.html`, `dashboard_rt.html` | Static/real-time demo dashboards — **hard-coded demo data, not pipeline output** |
 
-对齐 `SCI_OPTIMIZATION_PLAN.md` 与论文《Multi-Indicator Conflict Early Warning: A Kalman Filter Approach with SIPRI Military Expenditure Data》的 Methods / Reproducibility 要求，把原型中的硬编码数值替换为**从原始数据到指标的端到端可执行管道**。
+## Headline reproduced numbers (golden regressions in `tests/`)
 
-### 安装
+| Metric | Value |
+|---|---|
+| AUC (multi-factor, OOS 2015–2024) | 0.5379 [0.4660, 0.6098] |
+| Brier (before calibration → after isotonic) | 0.1202 → 0.0298 |
+| Alert threshold τ* / confusion (TP/FP/FN/TN) | 0.507 / 4·38·3·1378 (1378/225/42/5 at baseline τ) |
+| Median warning lead time | 40.36 months (22/47 alerts) |
+| Baselines: King–Zeng logit / pooled VAR(2) | 0.5497 / 0.5909 |
+| Kalman estimation-window sensitivity (M2) | r = 0.926, flag agreement 98.9% |
+| Imputation sensitivity (N6) | 0.5538 / 0.5329 |
 
-```bash
-python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
-```
-
-### 运行
-
-```bash
-python scripts/00_fetch_data.py        # 自动联网抓取真实军费+经济数据 → data/raw_real.json
-python scripts/run_all.py              # 一键跑完 load → features → train → eval → figures
-# 或分阶段：
-python scripts/01_load_data.py
-python scripts/02_feature_engineering.py
-python scripts/03_train_model.py
-python scripts/04_eval_backtest.py
-python scripts/05_generate_figures.py
-python scripts/06_repro_check.py       # 可复现性自检（同种子连跑两次比对 hash）
-```
-
-### 数据来源：自动抓取真实数据
-
-管道默认使用**真实数据**（`config.yaml → data.source: real`）。`scripts/00_fetch_data.py`
-通过 World Bank WDI API 自动抓取各国真实军费支出（SIPRI 口径 `MS.MIL.XPND.CD`）
-与宏观经济指标（GDP 增速 / 通胀率 / 失业率），缓存到 `data/raw_real.json`，
-下游所有步骤均基于该缓存离线、可复现运行。若缓存缺失，`load_raw` 会自动触发抓取
-（程序"自己找数据"）。切换回演示用合成数据设 `data.source: synthetic`。
-
-| 指标 | World Bank WDI id | 对应论文因子 |
-|------|------------------|--------------|
-| 军费支出（现价美元） | `MS.MIL.XPND.CD` | 军费异常（Kalman 残差，§3.1） |
-| GDP 年增长率 | `NY.GDP.MKTP.KD.ZG` | 经济压力（§3.2） |
-| 通胀率 | `FP.CPI.TOTL.ZG` | 经济压力（§3.2） |
-| 失业率 | `SL.UEM.TOTL.ZS` | 经济压力（§3.2） |
-
-> 冲突标签 / 邻国矩阵仍复用 `db_data.json` 中项目策展的验证集（真实 COW 抽取为后续步骤）。
-> 政治不稳（Polity IV）、领土争端（ICOW）、同盟关系（ATOP）三类因子在 `SCI_OPTIMIZATION_PLAN.md`
-> 中标注为"需外部静态数据集"，当前以经济压力因子作为多因子层的可抓取替代。
-
-### 测试
+## Quick start
 
 ```bash
-pytest -q
+python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
+pip install -r requirements.lock                      # exact environment (Python 3.13)
+python scripts/run_all.py                             # load → features → train → eval → figures
+python -m pytest -q                                   # 32 tests incl. golden regressions
+python scripts/06_repro_check.py                      # two-run determinism check
 ```
 
-### 产物（`artifacts/`，git-ignored，投稿时归档到 Zenodo）
+Stage-by-stage: `scripts/00_fetch_data.py` (WDI download) → `01_load_data` → `02_feature_engineering` → `03_train_model` → `04_eval_backtest` → `05_generate_figures` → `06_repro_check`.
 
-| 产物 | 内容 | 对应计划条款 |
-|------|------|--------------|
-| `data/raw_real.json` | 自动抓取的真实军费+经济数据缓存（World Bank WDI） | A3 |
-| `data_manifest.json` | 数据来源 / 版本戳 / SHA256 / 快照日期 / SIPRI·COW 版本 | A3 |
-| `panel.csv` / `features.csv` | 国家-年面板与 9 因子特征（e* + 经济压力等） | A1 |
-| `kalman_params.csv` | 每国拟合的 σ²ε/σ²η/σ²ζ/log-lik | A3 |
-| `kalman_signals.csv` | 标准化一步预测残差 e* 与异常标记 | §3.1 |
-| `oos_predictions.csv` | blocked CV 各 fold 的样本外预测 | B3 |
-| `xgb_params.json` | 模型超参 / 稀有事件权重 / fold 划分 / 种子 | A3 |
-| `metrics.json` | AUC·DeLong CI / Brier·bootstrap CI / 消融 / 两两对比（DeLong + bootstrap p + BH-FDR） | B1/B2 |
-| `figures/fig_*.{pdf,svg,png}` | ROC、校准曲线、Kalman 信号、消融、SHAP（矢量图） | C |
+## Data
 
-### 关键设计（可复现性）
+- **Military expenditure & macro covariates (real, auto-fetched)**: World Bank WDI `MS.MIL.XPND.CD` (SIPRI-reported, current US$), GDP growth, inflation, unemployment. A 100 country-year spot-check against the official SIPRI 2025 xlsx found median difference 0 (86% within 1%); see `scripts/verify_wdi_sipri.py`.
+- **External covariates & conflict labels — read the disclosure**: the files currently consumed by the pipeline under `data/external/` are **simulated placeholders** generated by `src/conflict_ew/simulate.py` (panel-shaped fill, not real ICOW/ATOP/Polity/V-Dem/COW values). Official originals are auto-downloaded to `data/external/raw/` with SHA-256 registered, and converted to panel schema in `data/external_real/` by `python scripts/fetch_external.py --convert`. Full evidence and implications: **`PROVENANCE.md` §3**.
+- All labels/features derive from `(iso3, year)` identifiers; the country identity mapping is provided in the repository (`data/external/countries.csv`).
 
-- **全链路固定种子**：`config.yaml → reproducibility.seed`，Python `random`/`numpy`/`xgboost` 统一。
-- **配置驱动**：所有超参（Kalman 网格、XGBoost、CV 折数、阈值、先验校正）集中 `config.yaml`，无魔法数字。
-- **严格样本外**：blocked expanding-window CV（`test_start: 2015`），特征用 `t-1` 之前数据，无 look-ahead 泄漏。
-- **稀有事件处理**：XGBoost 用 `scale_pos_weight`；logistic 基准用 King–Zeng 先验校正（`prior_correction`）。
-- **多重比较校正**：基准两两对比的 p 值经 Benjamini–Hochberg FDR 校正。
-- **逐阶段溯源日志**：每个阶段写 JSONL run-log（git commit / Python·库版本 / 种子 / 时间戳）。
+## Reproducibility design
 
----
+- Fixed seed 20240101 across Python/NumPy/XGBoost; deterministic two-run check (`06_repro_check.py`).
+- Strictly out-of-sample evaluation: blocked expanding-window CV with `test_start: 2015`; features use ≤ t−1 information only (look-ahead suite L1–L5 in `tests/test_lookahead.py`).
+- Rare-event handling: `scale_pos_weight` (XGBoost) and King–Zeng prior correction (logistic baseline).
+- Uncertainty: DeLong CIs, paired bootstrap with BH-FDR correction, Wilson intervals, parametric bootstrap for Brier.
+- Release artifacts (model JSON, OOS predictions, SHAP values, MANIFEST with size+SHA-256) are generated by `scripts/12_export_release.py`; `artifacts/` is git-ignored and archived to Zenodo at submission time.
 
-## 快速启动
+## Demo dashboards (not part of the scientific claims)
 
-直接双击打开 `dashboard_v3.html` 即可，无需安装任何依赖。
+`dashboard_v3.html` (static) and `dashboard_rt.html` (SSE-driven) are self-contained front-end demos. They load hard-coded demo data and a rules-based "AI reasoning" template — **no LLM, no pipeline output**. See `REALTIME_SYSTEM_SPEC.md` in the working notes for the real-time architecture sketch.
 
-> 文件自包含：所有数据、GeoJSON 地图、CSS 和 JS 已内联。首次加载需联网（CDN 拉取 ECharts 和 D3.js），之后可离线使用（浏览器缓存）。
+## Environment
 
-支持的浏览器：Chrome / Edge / Firefox 最新版（推荐 Chrome）。
+Python 3.13; key versions pinned in `requirements.lock` (xgboost 3.4.1, scikit-learn 1.9.0, numpy 2.5.2, pandas 3.0.5) and matching the manuscript's reproducibility statement.
 
----
+## Citation
 
-## 功能概览
+See `CITATION.cff`. A Zenodo DOI will be minted for the submission release tag.
 
-### 态势总览
-- **真实世界地图**（GeoJSON）：点击任意国家进入详情页
-- **TOP 10 风险排名**：实时异常得分排序
-- **预警时间线**：2018–2024 年度预警统计
+## License
 
-### 深度分析
-- **动态国家关系图**（D3 力导向图）：拖拽 / 悬停 / 点击交互
-- **因子雷达图**：6 维度风险因子分解
-- **军费支出时序**：实测 vs 预测对比
-
-### 预警中心
-- 28 条历史预警记录（点击展开推理链）
-- 按级别（HIGH / ELEVATED / MODERATE）筛选
-
-### 数据中心
-- 40 国基础信息表
-- 军费支出查询（带趋势图）
-- 双边关系网络
-- 历史冲突事件
-- 模型回测（消融实验 + ROC + 混淆矩阵）
-
-### 国家详情页
-- **可视化图表**：因子雷达 + 军费趋势 + T-GNN 异常信号
-- **AI 风险分析**：6 模块固定模板
-  - Executive Summary
-  - Key Risk Drivers
-  - Regional Context
-  - T-GNN Signal Interpretation
-  - 6-Month Outlook
-  - Alert History
-- **相关新闻**：6 条模拟国际新闻（带来源 / 日期 / 情感标签）
-
----
-
-## 技术架构
-
-| 层 | 技术 |
-|------|------|
-| 可视化 | ECharts 5.5 + D3.js v7 |
-| 地图 | GeoJSON 世界地图（217 个区域） |
-| 数据 | 内联 JSON（192KB 压缩） |
-| 样式 | 原生 CSS（Command Steel 设计系统） |
-| 模型 | T-GNN（时序图神经网络，AUC 0.83） |
-
----
-
-## 数据说明
-
-- **来源**：SIPRI 军费数据库（1990–2024）
-- **覆盖**：全球 40 个主要国家
-- **因子**：军费异常、军备竞赛、经济压力、政治不稳、领土争端、同盟紧张
-
-| 文件 | 说明 |
-|------|------|
-| `dashboard_v3.html` | 主仪表板（自包含，可直接运行） |
-| `cdata.json` | 紧凑格式数据（用于重建） |
-| `db_data.json` | 全格式数据（带完整字段名） |
-
----
-
-## 设计说明
-
-配色方案 **Command Steel**：
-- 深钢色背景 `#0b0f15`，避免纯黑
-- 琥珀色强调 `#c9a84c`，避免 AI 审美的青蓝霓虹
-- 6 色渐变风险热力图
-- 等宽字体展示数据（SF Mono / JetBrains Mono）
-- 暗哑红 / 钢青 / 低沉绿 语义色
-
-参考：[OSINT War Room](https://github.com/Hue-Jhan/OSINT-War-Room)、Impeccable 设计原则
-
----
-
-## 注意事项
-
-1. 首次打开需联网（CDN 加载 ECharts + D3.js），后续浏览器缓存可离线使用
-2. 建议分辨率 ≥ 1366×768，最佳 1920×1080
-3. 模拟新闻来自模板生成，非实时抓取
-4. AI 分析基于规则引擎 + 数据驱动模板，非真实 LLM 输出
-
----
-
-## 方法论增强（对齐论文 Multi.docx）
-
-按《Multi-Indicator Conflict Early Warning: A Kalman Filter Approach with SIPRI Military Expenditure Data》对仪表板做了针对性增强，主要用途与接口不变：
-
-| # | 改动 | 论文依据 |
-|---|------|----------|
-| 1 | 新增本地线性趋势卡尔曼滤波（`kalmanLLT` / `fitKalman` / `computeKalmanSignals`）：对 SIPRI 军费做 log 变换后分解为潜趋势（水平 μ、斜率 β）与噪声，输出标准化一步预测残差 e* = v/√F | §3.1 信号提取层 |
-| 2 | 以 ±2σ 阈值标记异常军费信号；国家详情页新增「Kalman Filter Signal (e*)」图（含 ±2σ 参考线） | §3.1 异常评分 |
-| 3 | AI 分析因子归因改为 SHAP 风格，满足局部精度 Σφ_j = logit(p)，\|φ\|<0.05 标注「not a substantive driver」 | §3.2 多因子评分层 / SHAP |
-| 4 | 高置信（p>0.7）时追加核查清单（采购周期 / 独立因子数 / 交叉来源），并加入「不超出给定数据推断」grounding 约束 | §3.3 智能体推理层 |
-| 5 | 数据中心「Backtest」新增 Brier 分数及 Reliability / Resolution / Uncertainty 分解，消融实验扩展为基准对比（含稀有事件校正逻辑回归 + VAR(p)），并校准 Precision/Recall/F1 使其与混淆矩阵一致 | §2.5 / §4 评估框架 |
-
-> 超参数（σ²_η、σ²_ζ、σ²_ε）在浏览器内通过预测误差分解的极大似然网格搜索估计；滤波为线性 O(N)，40 国全年序列 < 50ms。
-
+MIT (see `LICENSE`). Data files retain their original providers' terms: World Bank (CC BY 4.0), SIPRI (CC BY 4.0), Polity5 (free for research use, cite Marshall & Gurr 2020), COW project data (public domain per project citation norms).

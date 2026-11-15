@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software or the reproduced results, please cite it as below."
+title: "Conflict Early Warning: Kalman-Filter Signal Extraction with Multi-Factor XGBoost"
+version: v1.0.0-paper
+date-released: "2026-11-15"
+license: MIT
+repository-code: "https://github.com/USERNAME/ConflictEW_T-GNN"
+abstract: "Reproducible pipeline for multi-indicator conflict early warning: Kalman local-linear-trend signal extraction, multi-factor XGBoost with blocked temporal cross-validation, King-Zeng and pooled VAR(2) baselines, calibration and sensitivity analyses. Includes honest negative results and full data provenance."
+keywords:
+  - conflict early warning
+  - Kalman filter
+  - XGBoost
+  - machine learning
+  - reproducibility
+  - political science
+authors:
+  - name: "The Conflict Early Warning Project Authors"
+    # TODO: replace with the real author list and ORCIDs before public release.
