@@ -189,9 +189,3 @@ def compute_kalman_signals(panel: pd.DataFrame) -> pd.DataFrame:
                    n_anomaly=int(signals["is_anomaly"].sum()),
                    diverged=int(params_df["diverged"].sum()))
     return signals
-
-
-def e_star_latest(signals: pd.DataFrame) -> pd.DataFrame:
-    """返回每国最新年份的 e*（供前端/预警快速读取）。"""
-    latest = signals.sort_values("year").groupby("iso3").tail(1)
-    return latest[["iso3", "year", "e_star", "is_anomaly"]]

@@ -9,8 +9,6 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
@@ -155,31 +153,6 @@ def bh_fdr(pvals: np.ndarray, alpha: float = 0.05) -> np.ndarray:
     threshold = alpha * rank / m
     sig = p <= threshold
     return sig
-
-
-def bootstrap_auc_diff(y_true, p_a, p_b, n_boot: int = 1000, seed: int = 20240101) -> dict:
-    """bootstrap 差异检验（AUC_a - AUC_b 的 95% CI 与双侧 p 值）。"""
-    rng = np.random.default_rng(seed)
-    y = np.asarray(y_true)
-    n = len(y)
-    pos_idx = np.where(y == 1)[0]
-    neg_idx = np.where(y == 0)[0]
-    if len(pos_idx) < 2 or len(neg_idx) < 2:
-        return {"diff": None, "ci_lower": None, "ci_upper": None, "p_value": None, "method": "bootstrap"}
-    diffs = []
-    for _ in range(n_boot):
-        pi = rng.choice(pos_idx, size=len(pos_idx), replace=True)
-        ni = rng.choice(neg_idx, size=len(neg_idx), replace=True)
-        idx = np.concatenate([pi, ni])
-        a = roc_auc_score(y[idx], p_a[idx])
-        b = roc_auc_score(y[idx], p_b[idx])
-        diffs.append(a - b)
-    diffs = np.array(diffs)
-    diff = float(np.mean(diffs))
-    ci = np.percentile(diffs, [2.5, 97.5])
-    p_value = float(2 * min((diffs > 0).mean(), (diffs < 0).mean()))
-    return {"diff": diff, "ci_lower": float(ci[0]), "ci_upper": float(ci[1]),
-            "p_value": p_value, "method": "bootstrap-1000"}
 
 
 # ---------------------------------------------------------------- 主入口

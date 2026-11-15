@@ -273,10 +273,3 @@ def _load_report_context() -> dict:
                                                                        mf.get("entries", {}).get("raw_simulated", {}).get("source", "—"))
     return ctx
 
-
-def list_reports() -> list[dict]:
-    idx_path = get_path("report_dir") / "index.json"
-    if not idx_path.exists():
-        return []
-    with open(idx_path, "r", encoding="utf-8") as f:
-        return json.load(f)

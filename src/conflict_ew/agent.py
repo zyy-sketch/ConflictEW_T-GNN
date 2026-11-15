@@ -201,16 +201,3 @@ def save_chains(chains: list[dict], path=None) -> None:
         json.dump({"n": len(chains), "backend": cfg()["llm"]["backend"], "chains": chains},
                   f, ensure_ascii=False, indent=1)
     meta.log_stage("agent_chains", n=len(chains), backend=cfg()["llm"]["backend"])
-
-
-def get_chain(country: str, year: int, chains_file=None) -> Optional[dict]:
-    """按 (country, year) 查询已生成的推理链。"""
-    path = chains_file or (get_path("artifact_dir") / "reasoning_chains.json")
-    if not path.exists():
-        return None
-    with open(path, "r", encoding="utf-8") as f:
-        payload = json.load(f)
-    for c in payload.get("chains", []):
-        if c["country"] == country and c["year"] == year:
-            return c
-    return None

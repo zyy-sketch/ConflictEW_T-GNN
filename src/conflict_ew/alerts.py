@@ -1,4 +1,4 @@
-"""F15/F16 预警机制：分级预警触发与通知 + 阈值配置。
+"""F15 预警机制：分级预警触发与归档。
 
 - 风险概率穿越阈值触发分级预警：
     p ≥ 0.7        高风险（触发 Agent 核查清单 + 人工复核）
@@ -6,69 +6,24 @@
     p < 0.5        低风险（常规）
 - 概率 NaN 或超 [0,1] 自动拦截 + 记录异常日志（PRD §5.3 阈值越界）
 - 通知：站内通知（in-app）；邮件通道预留（需配置 SMTP，默认关闭）
-- 阈值配置写回 config.yaml -> eval.thresholds（F16，带验证：high>mid + 范围）
-- 阈值选择仅在训练期完成（F16 约束；配置面板提示）
+- 阈值来源：config.yaml -> eval.thresholds；阈值选择仅在训练期完成（防泄漏约束）
 """
 from __future__ import annotations
 
 import json
 import logging
 import math
-from typing import Any, Optional
+from typing import Optional
 
 import pandas as pd
 
 from . import meta
-from .agent import generate_reasoning_chain, risk_level_of
+from .agent import risk_level_of
 from .paths import cfg, get_path
 
 logger = logging.getLogger("conflict_ew.alerts")
 
 RISK_LABEL = {"high": "高风险", "mid": "中风险", "low": "低风险"}
-
-
-def validate_thresholds(high: float, mid: float) -> tuple[bool, str]:
-    """阈值验证（F16 表单验证规则 + §5.3 越界拦截）。
-
-    规则：high ∈ [0.5, 0.95]，mid ∈ [0.3, 0.7]，high > mid。
-    """
-    if not isinstance(high, (int, float)) or not isinstance(mid, (int, float)):
-        return False, "阈值必须是数值"
-    if math.isnan(high) or math.isnan(mid):
-        return False, "阈值不能为 NaN"
-    if not (0.5 <= high <= 0.95):
-        return False, "高风险阈值须在 0.5-0.95 之间"
-    if not (0.3 <= mid <= 0.7):
-        return False, "中风险阈值须在 0.3-0.7 之间"
-    if high <= mid:
-        return False, "高风险阈值须大于中风险阈值"
-    return True, "ok"
-
-
-def update_thresholds(high: float, mid: float, persist: bool = True) -> dict:
-    """F16 阈值配置：验证后写回 config.yaml -> eval.thresholds。
-
-    :return: {"ok": bool, "message": str, "thresholds": {...}, "training_only": True}
-    """
-    ok, msg = validate_thresholds(high, mid)
-    if not ok:
-        return {"ok": False, "message": msg, "thresholds": None, "training_only": True}
-    from pathlib import Path
-
-    import yaml
-
-    cfg_path = Path(__file__).resolve().parents[2] / "config.yaml"
-    with open(cfg_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    old = dict(data["eval"]["thresholds"])
-    data["eval"]["thresholds"]["high"] = float(high)
-    data["eval"]["thresholds"]["mid"] = float(mid)
-    if persist:
-        with open(cfg_path, "w", encoding="utf-8") as f:
-            yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
-        meta.log_stage("thresholds_updated", old=old, new=data["eval"]["thresholds"])
-    return {"ok": True, "message": "已更新（提示：阈值选择仅在训练期完成，防泄漏）",
-            "thresholds": data["eval"]["thresholds"], "training_only": True}
 
 
 def scan_alerts(oos_test: pd.DataFrame, country_names: Optional[dict] = None,
@@ -135,11 +90,3 @@ def append_alert_history(alerts: list[dict]) -> None:
             history.append(a)
     with open(hist_path, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=1)
-
-
-def load_alerts() -> list[dict]:
-    path = get_path("alerts_file")
-    if not path.exists():
-        return []
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f).get("alerts", [])
