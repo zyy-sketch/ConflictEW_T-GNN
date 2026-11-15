@@ -1,0 +1,198 @@
+{
+  "generated_at": "2026-11-15T05:56:31+00:00",
+  "policy": "data/external/*.csv 为 simulate.write_simulated_data() 的模拟产物（P0-7 披露）；官方原件在 data/external/raw/，转换产物在 data/external_real/。",
+  "sources": {
+    "polity5": {
+      "name": "Polity5 Annual Time-Series 1946-2018",
+      "provider": "Center for Systemic Peace (CSP)",
+      "version": "p5v2018 (Polity5d annual, polity2)",
+      "status": "ok",
+      "url": "http://www.systemicpeace.org/inscr/p5v2018.xls",
+      "file": "data\\external\\raw\\p5v2018.xls",
+      "sha256": "f81248561cb4fd884b0a439c7c0af298bc7f81b993bcd42e006988cb6d37a71c",
+      "bytes": 4487680
+    },
+    "cow_intra_state_wars": {
+      "name": "COW Intra-State Wars v5.1",
+      "provider": "Correlates of War Project",
+      "version": "5.1",
+      "status": "ok",
+      "url": "https://correlatesofwar.org/wp-content/uploads/Intra-State-Wars-v5.1.zip",
+      "file": "data\\external\\raw\\Intra-State-Wars-v5.1.zip",
+      "sha256": "b2d1f4892d3cbb02604cf8e506c5c2c3e87fb85df75276f69b1089e67fb25236",
+      "bytes": 887487
+    },
+    "cow_direct_contiguity": {
+      "name": "COW Direct Contiguity v3.2",
+      "provider": "Correlates of War Project",
+      "version": "3.2",
+      "status": "ok",
+      "url": "https://correlatesofwar.org/wp-content/uploads/DirectContiguity320.zip",
+      "file": "data\\external\\raw\\DirectContiguity320.zip",
+      "sha256": "f1be081934f353f395bb873093b695ea01d7dfcb48e89146bd984c45342ba17a",
+      "bytes": 636368
+    },
+    "atop": {
+      "name": "ATOP Alliance Treaty Obligations and Provisions",
+      "provider": "atop-data.org",
+      "version": null,
+      "status": "manual",
+      "hint": "浏览器打开 https://www.atop-data.org/ → Data → 下载 ATOP 5.1 dyadic CSV，保存为 data/external/raw/atop_5_1.csv（站点有 Cloudflare 403 防护，无法脚本直连）",
+      "manual_hint": "浏览器打开 https://www.atop-data.org/ → Data → 下载 ATOP 5.1 dyadic CSV，保存为 data/external/raw/atop_5_1.csv（站点有 Cloudflare 403 防护，无法脚本直连）"
+    },
+    "icow": {
+      "name": "ICOW Territorial Claims",
+      "provider": "icow.org (Huth & Allee)",
+      "version": null,
+      "status": "manual",
+      "hint": "浏览器打开 https://www.icow.org/ → Territorial Claims 数据页下载 issue-year 表，保存为 data/external/raw/icow_terrclaims.csv（站点当前不可达/超时，需人工核对镜像）",
+      "manual_hint": "浏览器打开 https://www.icow.org/ → Territorial Claims 数据页下载 issue-year 表，保存为 data/external/raw/icow_terrclaims.csv（站点当前不可达/超时，需人工核对镜像）"
+    },
+    "vdem": {
+      "name": "V-Dem Country-Year Full Dataset",
+      "provider": "v-dem.net",
+      "version": null,
+      "status": "manual",
+      "hint": "浏览器打开 https://www.v-dem.net/ → 注册/登录 → Data → V-Dem Dataset (Country-Year) 下载 CSV，保存为 data/external/raw/vdem_cy.csv（需注册许可，禁止脚本直连）",
+      "manual_hint": "浏览器打开 https://www.v-dem.net/ → 注册/登录 → Data → V-Dem Dataset (Country-Year) 下载 CSV，保存为 data/external/raw/vdem_cy.csv（需注册许可，禁止脚本直连）"
+    }
+  },
+  "curated_simulated": {
+    "cow_conflicts.csv": {
+      "sha256": "65979175af8813f1c7e507b84aa88960704d48a4989250f834ef6fe1c1d77f4b",
+      "bytes": 119094,
+      "provenance": "simulate.write_simulated_data()（模拟，非官方数据）"
+    },
+    "polity_vdem.csv": {
+      "sha256": "8dba2d30afd7ce25b4ae5ee746bc96629b66326b54c5263ef27652e1e1ac7877",
+      "bytes": 262419,
+      "provenance": "simulate.write_simulated_data()（模拟，非官方数据）"
+    },
+    "icow.csv": {
+      "sha256": "741757b64d6723eb2258764561eecf89e4fcd8ef5507238b0090966b98bd2b7a",
+      "bytes": 102082,
+      "provenance": "simulate.write_simulated_data()（模拟，非官方数据）"
+    },
+    "atop.csv": {
+      "sha256": "80ffbb75cd75834d8277a5e20c879783e80ef32e3ae7e7461bd701b1c130d1b3",
+      "bytes": 102083,
+      "provenance": "simulate.write_simulated_data()（模拟，非官方数据）"
+    },
+    "cow_adjacency.csv": {
+      "sha256": "4fb94a20339c9173512f3cf158111e3255ff0da55912492c3b4fdfc05f48613f",
+      "bytes": 6144,
+      "provenance": "simulate.write_simulated_data()（模拟，非官方数据）"
+    },
+    "countries.csv": {
+      "sha256": "e6e06c7697917c1ede3c5d31e6e1955e49246386e23e7fe12ed7bb41aeb03dea",
+      "bytes": 6815,
+      "provenance": "simulate.write_simulated_data()（模拟，非官方数据）"
+    }
+  },
+  "raw_files": {
+    "data\\external\\raw\\ColonialContiguity310.zip": {
+      "sha256": "a51e4c5e4412c94ce3476f15160991e01236ab314a9c62f197942747bbcdf55d",
+      "bytes": 425836
+    },
+    "data\\external\\raw\\cow_contiguity\\ColonialContiguity310\\Colonial Contiguity Codebook.pdf": {
+      "sha256": "3e2f265e4d0cbeb76daf64160a13328df19451de3a20ca3295967e23170e0d73",
+      "bytes": 155398
+    },
+    "data\\external\\raw\\cow_contiguity\\ColonialContiguity310\\contcol.csv": {
+      "sha256": "ac09371e8be348a11b8aaf337871f2a893518cb73e6eda3ff443d28b2ab9a3e8",
+      "bytes": 66616
+    },
+    "data\\external\\raw\\cow_contiguity\\ColonialContiguity310\\contcol.dta": {
+      "sha256": "6d13dc746e281abc7c64e100df2052d37d5f8e6b1c21d3e7dada10a2ece4f4fa",
+      "bytes": 39173
+    },
+    "data\\external\\raw\\cow_contiguity\\ColonialContiguity310\\contcold.csv": {
+      "sha256": "b1d927305fe6e121793bc5d2484a244056e35ba3b9c16383a887fc2b0ea03fdd",
+      "bytes": 596578
+    },
+    "data\\external\\raw\\cow_contiguity\\ColonialContiguity310\\contcold.dta": {
+      "sha256": "5e2b7829bda4589fa086bf4b94d689c4082e35f5615e6bb0c50058eaf770f0e4",
+      "bytes": 336924
+    },
+    "data\\external\\raw\\cow_contiguity\\ColonialContiguity310\\contcols.csv": {
+      "sha256": "65a87edd739be576f3d0c46cc592208090139d00337c96caa779d74ec00ab3e0",
+      "bytes": 399156
+    },
+    "data\\external\\raw\\cow_contiguity\\ColonialContiguity310\\contcols.dta": {
+      "sha256": "afd2040e94d95648197e99cb4071d2cffaa72955d1b0d0650661018022a6260d",
+      "bytes": 257166
+    },
+    "data\\external\\raw\\cow_contiguity\\ColonialContiguity310\\Entities.pdf": {
+      "sha256": "9c08499ee7e56c3b7fb1109960198be7b8f30e3cc5e45604488562a30caa0731",
+      "bytes": 132377
+    },
+    "data\\external\\raw\\cow_direct_contiguity\\DirectContiguity320\\contdir.csv": {
+      "sha256": "62f3714d1a75c940887bf15b40b256aeeb41545734ab13abe96ab3f49a980362",
+      "bytes": 89528
+    },
+    "data\\external\\raw\\cow_direct_contiguity\\DirectContiguity320\\contdir.dta": {
+      "sha256": "c21cd74efbe849f5bb89cfe36f4a2468b7c39c6997dd89fe793250397478800a",
+      "bytes": 163480
+    },
+    "data\\external\\raw\\cow_direct_contiguity\\DirectContiguity320\\contdird.csv": {
+      "sha256": "42b8fe2bc7fffe58665a38f7476d7d76cf3acd5a22e176c3691670997a4717f2",
+      "bytes": 3104061
+    },
+    "data\\external\\raw\\cow_direct_contiguity\\DirectContiguity320\\contdird.dta": {
+      "sha256": "a1f0cb033a017edf8442bed584929739ce57b2836c66b44ec0a7b85686a8ddb7",
+      "bytes": 1734166
+    },
+    "data\\external\\raw\\cow_direct_contiguity\\DirectContiguity320\\contdirs.csv": {
+      "sha256": "5caa5cbc0cf42fdfdcecf7a277a60885aabdb63f2933146da7e9b19217b44339",
+      "bytes": 398157
+    },
+    "data\\external\\raw\\cow_direct_contiguity\\DirectContiguity320\\contdirs.dta": {
+      "sha256": "79db15dc50eeb52322c5b4aaba8bcffec0622ab9a2aec12227605f2b0a82178b",
+      "bytes": 224823
+    },
+    "data\\external\\raw\\cow_direct_contiguity\\DirectContiguity320\\Direct Contiguity Codebook.pdf": {
+      "sha256": "48ea294628530531c835b1615e7b395cdabd34fe09c3f3a56b2f1e9418601193",
+      "bytes": 156120
+    },
+    "data\\external\\raw\\cow_isw\\Codebook for Intra-state v5.1 2.9.20.pdf": {
+      "sha256": "c0e91d046c4d772e34c3a429b9075f1077d7bb2f57ecb52a17b531d2ff4e5df6",
+      "bytes": 375408
+    },
+    "data\\external\\raw\\cow_isw\\Description of Intra-state v5.1.pdf.pdf": {
+      "sha256": "f1f764b03592732e97ece7e2701b8b1f2f12478f0731690fbe144be1c4f9191f",
+      "bytes": 460704
+    },
+    "data\\external\\raw\\cow_isw\\INTRA-STATE WARS v5.1 CSV.csv": {
+      "sha256": "aadf6e21e34c2205b3f4e493e369ce8548576ec9a9b342951a6dbe110f6d5c07",
+      "bytes": 82293
+    },
+    "data\\external\\raw\\cow_isw\\INTRA-STATE WARS v5.1.dta": {
+      "sha256": "34351c0ab909c04b12d6eb2f1e746e371f888872b66af36bfb86cd3bb36c3deb",
+      "bytes": 130013
+    },
+    "data\\external\\raw\\cow_isw\\INTRA-STATE_State_participant v5.1.dta": {
+      "sha256": "0669e9d781598a0d2a628e4371742edcd4fae25348a2958ef421922ef5afb428",
+      "bytes": 179461
+    },
+    "data\\external\\raw\\cow_isw\\INTRA-STATE_State_participants v5.1 CSV.csv": {
+      "sha256": "17a452e5c72deb459fe436d4e58871d8be81b6abb2111c724c7d31bc155b9b66",
+      "bytes": 122484
+    },
+    "data\\external\\raw\\DirectContiguity320.zip": {
+      "sha256": "f1be081934f353f395bb873093b695ea01d7dfcb48e89146bd984c45342ba17a",
+      "bytes": 636368
+    },
+    "data\\external\\raw\\Intra-State-Wars-v5.1.zip": {
+      "sha256": "b2d1f4892d3cbb02604cf8e506c5c2c3e87fb85df75276f69b1089e67fb25236",
+      "bytes": 887487
+    },
+    "data\\external\\raw\\p5v2018.xls": {
+      "sha256": "f81248561cb4fd884b0a439c7c0af298bc7f81b993bcd42e006988cb6d37a71c",
+      "bytes": 4487680
+    },
+    "data\\external\\raw\\SIPRI-Milex-data-1949-2025_v1.2.xlsx": {
+      "sha256": "6cc3a30b1064f9f02e60236667eef82e08cad42910ce630909d004ad2c398a9d",
+      "bytes": 922552
+    }
+  }
+}
