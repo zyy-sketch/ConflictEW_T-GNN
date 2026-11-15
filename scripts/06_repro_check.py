@@ -50,6 +50,13 @@ def compute_hash_round(force_core: bool) -> str:
 
 
 def main() -> int:
+    # Windows GBK 控制台兼容：输出含 ✅/❌，强制 UTF-8 防止 UnicodeEncodeError
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (AttributeError, ValueError):  # pragma: no cover - 非常规流对象
+                pass
     parser = argparse.ArgumentParser(description="可复现性校验")
     parser.add_argument("--full", action="store_true", help="重跑核心计算链后比较两轮 hash")
     args = parser.parse_args()

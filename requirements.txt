@@ -10,4 +10,5 @@ matplotlib>=3.10
 PyYAML>=6.0
 requests>=2.31
 xlrd>=2.0.1       # Polity5 .xls 原件解析（scripts/fetch_external.py）
+openpyxl>=3.1     # SIPRI 2025 .xlsx 原件解析（scripts/fetch_external.py、verify_wdi_sipri.py）
 pytest>=8.0

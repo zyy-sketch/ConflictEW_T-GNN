@@ -1,0 +1,12 @@
+# Normalize line endings across platforms (repo stores LF)
+* text=auto
+
+# Binary files — never normalize
+*.xls binary
+*.xlsx binary
+*.zip binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary

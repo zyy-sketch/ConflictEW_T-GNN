@@ -58,6 +58,13 @@ def kappa(rows: list[dict[str, str]], dim: str) -> float:
 
 
 def main() -> None:
+    # Windows GBK 控制台兼容：输出含 ✅/❌，强制 UTF-8 防止 UnicodeEncodeError
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (AttributeError, ValueError):  # pragma: no cover - 非常规流对象
+                pass
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--sheet", required=True, help="人工填写后的标注 CSV 路径")
     args = ap.parse_args()
