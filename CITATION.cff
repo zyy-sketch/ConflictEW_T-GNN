@@ -4,7 +4,7 @@ title: "Conflict Early Warning: Kalman-Filter Signal Extraction with Multi-Facto
 version: v2.0.0-realdata
 date-released: "2026-11-21"
 license: MIT
-repository-code: "https://github.com/USERNAME/ConflictEW_T-GNN"
+repository-code: "https://github.com/zyy-sketch/ConflictEW_T-GNN"
 abstract: "Reproducible pipeline for multi-indicator conflict early warning: Kalman local-linear-trend signal extraction, multi-factor XGBoost with blocked temporal cross-validation, King-Zeng and pooled VAR(2) baselines, calibration and sensitivity analyses. Includes honest negative results and full data provenance."
 keywords:
   - conflict early warning
