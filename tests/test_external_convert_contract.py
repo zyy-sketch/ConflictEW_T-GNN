@@ -38,6 +38,11 @@ def test_ucdp_labels_contract(c2i: dict[int, str]) -> None:
 
 def test_cow_conflicts_contract(c2i: dict[int, str]) -> None:
     """COW Intra-State Wars → 冲突历史表：schema/唯一性/年份下界。"""
+    isw_csv = ROOT / "data" / "external" / "raw" / "cow_isw" / "INTRA-STATE_State_participants v5.1 CSV.csv"
+    if not isw_csv.exists():
+        # cow_isw/ 是 .gitignore 的解压目录（仓库只提交 ZIP）：全新克隆/CI 上跳过；
+        # 解压 Intra-State-Wars-v5.1.zip 至同名目录后本契约测试生效
+        pytest.skip("本地未解压 cow_isw/（仅提交了 ZIP）；解压后此转换契约测试生效")
     df: pd.DataFrame = convert_cow_conflicts(c2i, set())
     assert {"iso3", "year", "onset", "active"} <= set(df.columns)
     assert not df.duplicated(["iso3", "year"]).any()
