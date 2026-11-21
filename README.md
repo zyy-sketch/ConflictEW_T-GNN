@@ -1,6 +1,6 @@
-# Conflict Early Warning: Kalman-Filter Signal Extraction with Multi-Factor XGBoost
+# An Auditable Three-Layer Pipeline for Multi-Indicator Geopolitical Risk Early Warning
 
-Reproducible research pipeline for the manuscript *"Multi-Indicator Conflict Early Warning: A Kalman Filter Approach"* — data ingestion → Kalman local-linear-trend signal extraction → multi-factor features → XGBoost with blocked temporal cross-validation → baseline comparisons → uncertainty quantification.
+Reproducible research pipeline for the manuscript *"An Auditable Three-Layer Pipeline for Multi-Indicator Geopolitical Risk Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"* — data ingestion → Kalman local-linear-trend signal extraction → multi-factor features → XGBoost with blocked temporal cross-validation → baseline comparisons → uncertainty quantification.
 
 > **Honest-results statement.** This is a negative-result release on real data. With real UCDP conflict-onset labels (v25.1) and real WDI military-expenditure covariates, the multi-factor Kalman model reaches **AUC 0.545 (DeLong 95% CI [0.493, 0.597])** on strictly out-of-sample years (2015–2024, 61 onsets) — **not better than a rare-events logistic baseline (AUC 0.572, paired diff n.s. p=0.61)**, and the headline Kalman military-anomaly signal is *harmful*: removing it raises AUC to 0.680. The model only significantly outperforms the pooled VAR(2) baseline (AUC 0.448, p=0.018). We report these findings as-is; see the manuscript and `PROVENANCE.md`.
 
@@ -24,6 +24,7 @@ Reproducible research pipeline for the manuscript *"Multi-Indicator Conflict Ear
 | `PROVENANCE.md` | Data source chain, SHA-256 registry, and a required disclosure on simulated external covariates |
 | `data/external/raw/` | Official raw downloads (Polity5, COW Intra-State Wars v5.1, COW Direct Contiguity v3.2) |
 | `data/external_real/` | Converted official originals — consumed by the pipeline when `data.external_source: real` (default since A2) |
+| `data/features.csv` | Note: contains an `F2_degraded` flag column (neighbor-data availability indicator) — **metadata only, not a model input** |
 | `reports/` | Self-contained pipeline reports (`run_all.py` output) |
 | `artifacts/` | Released result artifacts — metrics, OOS predictions, model JSON, SHAP, sensitivity JSONs, figures — committed via a whitelist (bulky operational files stay local) |
 | `dashboard_v3.html`, `dashboard_rt.html` | Static/real-time demo dashboards — **hard-coded demo data, not pipeline output** |

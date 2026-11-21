@@ -2,7 +2,7 @@
   "version": "v4-unified-2026-11-02",
   "generated_at": "2026-11-21",
   "note": "对每个发布文件登记 size 与 SHA-256；用于核验发布工件与记录运行产物一致。",
-  "n_files": 28,
+  "n_files": 40,
   "files": {
     "artifacts/alert_history.json": {
       "bytes": 268371,
@@ -10,7 +10,7 @@
     },
     "artifacts/alerts.json": {
       "bytes": 133,
-      "sha256": "1138447e466cf4219c6669abbe467cdcd84dfbd8be70e8bdd9d027924d3cae95"
+      "sha256": "12070bf06913e48dc83b6b86c5ed1ee5209f7e4b87f62671eaa9f9bac1c82628"
     },
     "artifacts/calibration_reliability.json": {
       "bytes": 5527,
@@ -19,6 +19,46 @@
     "artifacts/factor_registry.json": {
       "bytes": 1063,
       "sha256": "0c8b806b9bcc52259b49fd75239137089c5a0a86442993231efc9d0487de8dad"
+    },
+    "artifacts/figures/fig1_roc.pdf": {
+      "bytes": 19343,
+      "sha256": "1a9b901ce32b957f79f28d554dc915fe2f3b197257c1b5c909a2d53839500aca"
+    },
+    "artifacts/figures/fig1_roc.png": {
+      "bytes": 100958,
+      "sha256": "9c30e9b97e4b1d1f58a785318523a73da1f5e3d4b979935d822b5369c665b49e"
+    },
+    "artifacts/figures/fig2_reliability.pdf": {
+      "bytes": 20019,
+      "sha256": "072475df8f9b6902266df76597d5f813a3126189c6c2076be1fef2ebe1acb738"
+    },
+    "artifacts/figures/fig2_reliability.png": {
+      "bytes": 101960,
+      "sha256": "977b50c4958ace27ed3d4f128fefe288394953772b1ad73cab7386ac0c56fb47"
+    },
+    "artifacts/figures/fig3_ablation.pdf": {
+      "bytes": 17592,
+      "sha256": "9ef28520f6924e1ddbb5cac92f2393b82a4c37ebe64247cb2c94d537669d7fee"
+    },
+    "artifacts/figures/fig3_ablation.png": {
+      "bytes": 97589,
+      "sha256": "af883c9ae1205efe9311b79cc022f1dc2b78bf5e6c80f9248a30718b0e12ebac"
+    },
+    "artifacts/figures/fig4_baseline_forest.pdf": {
+      "bytes": 20793,
+      "sha256": "81bcbb6c15d6905391e7b44e89fc210ddd4441f9b6e1beb700218fd91b22b32d"
+    },
+    "artifacts/figures/fig4_baseline_forest.png": {
+      "bytes": 77456,
+      "sha256": "4493998004153c3d03699a01ced65ac360d0ebd4db6242f5e4bf98e7d0696020"
+    },
+    "artifacts/figures/fig5_threshold_sensitivity.pdf": {
+      "bytes": 21038,
+      "sha256": "df5239a90d26b8f8aada8b897df4ce612e3cdb3d476e7fb784d1d9349361c79d"
+    },
+    "artifacts/figures/fig5_threshold_sensitivity.png": {
+      "bytes": 125748,
+      "sha256": "8c406dd64d1fc60c7fe5e2021acc29bb25663730b88c1a6d78c1413cbee7902f"
     },
     "artifacts/m2_per_country_comparison.csv": {
       "bytes": 5563,
@@ -62,11 +102,11 @@
     },
     "artifacts/reasoning_chains.json": {
       "bytes": 4382582,
-      "sha256": "830cafd9018bf10556c54ca78ec605106badaaf4ef02e0a1ad602f244b64adc3"
+      "sha256": "070db085d0674f4335eff34243314050af86aef7e72fb8b1c5133a8cb7f19b3a"
     },
     "artifacts/run_log.jsonl": {
       "bytes": 6853,
-      "sha256": "ff83bff4a89acf67679e51be7337397745f8a46a33411d77dd93bf02fc45261d"
+      "sha256": "340d454c371712b69732bbef9d9dc62d6b67aea99ff8524702a07aa8a7a3c0d4"
     },
     "artifacts/runtime_benchmark.json": {
       "bytes": 732,
@@ -115,6 +155,14 @@
     "data/kalman_params.csv": {
       "bytes": 17971,
       "sha256": "d30cf7085ca2ca16ae6f929921bd46c71fc0b7ce5fb81e6a35a6c6cf785846b2"
+    },
+    "docs/protocol_kappa.md": {
+      "bytes": 2028,
+      "sha256": "f76f9fcfc701f177d67f9d5f1c722596d66b4d32fa060740b214b91920106cbe"
+    },
+    "data/annotation_sheet.csv": {
+      "bytes": 201,
+      "sha256": "a071708fac952023acb6eb6966f46b7ef504480b7d882c80013114135fd9ecc1"
     }
   }
 }

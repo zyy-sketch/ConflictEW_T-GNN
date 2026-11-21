@@ -5,7 +5,7 @@ project:
   name: ConflictEW
   version: v1.0.0
   seed: 20240101          # 全链路固定种子（PRD §8.2 可复现性）
-  paper_title: "Multi-Indicator Conflict Early Warning: A Kalman Filter Approach with SIPRI Military Expenditure Data"
+  paper_title: "An Auditable Three-Layer Pipeline for Multi-Indicator Geopolitical Risk Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"
 
 paths:
   data_dir: data

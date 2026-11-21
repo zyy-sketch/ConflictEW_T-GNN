@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or the reproduced results, please cite it as below."
-title: "Conflict Early Warning: Kalman-Filter Signal Extraction with Multi-Factor XGBoost"
+title: "An Auditable Three-Layer Pipeline for Multi-Indicator Geopolitical Risk Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"
 version: v2.0.0-realdata
 date-released: "2026-11-21"
 license: MIT
@@ -14,12 +14,12 @@ keywords:
   - reproducibility
   - political science
 authors:
+  - given-names: Jinmei
+    family-names: Lu
+    email: emmaljm20@163.com
+    affiliation: School of Public Security, Guangxi Police College, Nanning 530028, Guangxi, China
   - given-names: Yang
     family-names: Zhou
     email: 1461536272@qq.com
     orcid: "https://orcid.org/0009-0009-8168-470X"
     affiliation: School of Digital Economics, Nanning University, Nanning 530200, Guangxi, China
-  - given-names: Jinmei
-    family-names: Lu
-    email: emmaljm20@163.com
-    affiliation: School of Public Security, Guangxi Police College, Nanning 530028, Guangxi, China
