@@ -5,6 +5,8 @@ on:
     branches: [master, main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"   # 每周一 03:00 UTC：全量复现链（含 extended job）
 
 jobs:
   test:
@@ -59,3 +61,31 @@ jobs:
               else:
                   print("golden AUC smoke ok")
           PY
+
+  extended-reproduction:
+    # 一键全量复现链（--extended：09→10→11→14→15→13→12）——
+    # 仅在手动触发/每周计划时运行，避免每次 push 都花 5+ 分钟
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+      - name: Full reproduction chain (--extended)
+        run: python scripts/run_all.py --no-report --no-web --extended
+      - name: Verify key artifacts
+        run: |
+          test -f artifacts/metrics.json
+          test -f artifacts/threshold_sensitivity.json
+          test -f artifacts/m2_refit_end_to_end.json
+          test -f artifacts/calibration_reliability.json
+          test -f artifacts/figures/fig1_roc.png

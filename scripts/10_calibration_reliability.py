@@ -54,8 +54,9 @@ iso_kf.fit(val["p_conflict"], val["y"])
 # ---- 三模型测试分 ----
 y_kf = test["y"].to_numpy()
 p_kf = test["p_conflict"].to_numpy()
-bl_lr = baseline_logistic_re(feats, get_factor_columns())
-bl_va = baseline_var(feats)
+panel_df = pd.read_csv(get_path("panel_file"))
+bl_lr = baseline_logistic_re(feats, get_factor_columns(), panel_df)
+bl_va = baseline_var(feats, panel_df)
 y_lr = np.array([lab[(r["country"], r["year"])] for r in bl_lr["test_rows"]])
 p_lr = np.array([r["p_conflict"] for r in bl_lr["test_rows"]])
 lab_va = {(r["iso3"], int(r["year"])): int(r["y_onset"]) for _, r in feats.iterrows()}
@@ -137,17 +138,40 @@ def param_bootstrap_brier(p, y, b=2000, seed=20240101):
 
 
 models = {"KF+MF": (y_kf, p_kf), "LogReg_RE": (y_lr, p_lr), "VAR2": (y_va, p_va)}
+
+
+def _logit(p: np.ndarray) -> np.ndarray:
+    pc = np.clip(p, 1e-6, 1 - 1e-6)
+    return np.log(pc / (1 - pc))
+
+
 res = {"isotonic_fit": {"n_val": int(len(val)), "n_val_pos": int(val["y"].sum()),
                         "n_val_folds": int(val["fold"].nunique()),
                         "KF+MF": "oos 验证折（M6 规范）",
                         "LogReg_RE/VAR2": "各自训练期 in-sample 分数（与 τ 规则同口径）"},
        "models": {}}
+from sklearn.linear_model import LogisticRegression  # noqa: E402
+from sklearn.metrics import roc_auc_score  # noqa: E402
+
 for name, (y, p) in models.items():
     p_cal = np.asarray(ISOS[name].predict(p))
     res["models"][name] = {
         "raw": brier_decomp(p, y),
         "isotonic_calibrated": brier_decomp(p_cal, y),
     }
+    # AUC 追踪：isotonic 不保证单调 → 可能塌缩排序（本数据实测 resolution=0）；
+    # Platt/逻辑缩放单调可逆 → AUC_after 应与 raw 一致，排序信息保留
+    res["models"][name]["raw"]["auc"] = round(float(roc_auc_score(y, p)), 4)
+    res["models"][name]["isotonic_calibrated"]["auc_after"] = round(float(roc_auc_score(y, p_cal)), 4)
+    if name == "KF+MF":
+        pl = LogisticRegression(max_iter=1000)
+        pl.fit(_logit(val["p_conflict"].to_numpy()).reshape(-1, 1), val["y"].to_numpy())
+        p_platt = pl.predict_proba(_logit(p).reshape(-1, 1))[:, 1]
+        res["models"][name]["platt_calibrated"] = brier_decomp(p_platt, y)
+        res["models"][name]["platt_calibrated"]["auc_after"] = round(float(roc_auc_score(y, p_platt)), 4)
+        res["models"][name]["calibration_note"] = (
+            "isotonic 在本数据上把测试分塌缩为常数（resolution=0），不可用于排序；"
+            "需要排序时使用 platt_calibrated（单调，AUC 保持）——两者 Brier 差异极小。")
     if name == "KF+MF":
         df_kf = pd.DataFrame({"y": y, "p_conflict": p, "p_cal": p_cal})
         res["models"][name]["raw"]["bins"] = bins(df_kf, "p_conflict")

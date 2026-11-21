@@ -25,8 +25,13 @@ def features() -> pd.DataFrame:
     return pd.read_csv(get_path("features_file"))
 
 
-def test_logistic_re_golden(features: pd.DataFrame) -> None:
-    b = baseline_logistic_re(features, get_factor_columns())
+@pytest.fixture(scope="module")
+def panel() -> pd.DataFrame:
+    return pd.read_csv(get_path("panel_file"))
+
+
+def test_logistic_re_golden(features: pd.DataFrame, panel: pd.DataFrame) -> None:
+    b = baseline_logistic_re(features, get_factor_columns(), panel)
     assert b["auc"] == pytest.approx(0.5716, abs=5e-4)
     assert b["auc_ci_delong"][0] == pytest.approx(0.4897, abs=5e-4)
     assert b["auc_ci_delong"][1] == pytest.approx(0.6534, abs=5e-4)
@@ -42,8 +47,8 @@ def test_logistic_re_golden(features: pd.DataFrame) -> None:
     assert b["n"] == 1650
 
 
-def test_var2_golden(features: pd.DataFrame) -> None:
-    b = baseline_var(features)
+def test_var2_golden(features: pd.DataFrame, panel: pd.DataFrame) -> None:
+    b = baseline_var(features, panel)
     assert b["auc"] == pytest.approx(0.4479, abs=5e-4)
     assert b["auc_ci_delong"][0] == pytest.approx(0.3739, abs=5e-4)
     assert b["auc_ci_delong"][1] == pytest.approx(0.5219, abs=5e-4)
@@ -59,7 +64,7 @@ def test_var2_golden(features: pd.DataFrame) -> None:
     assert b["n"] == 1633
 
 
-def test_paired_diff_golden(features: pd.DataFrame) -> None:
+def test_paired_diff_golden(features: pd.DataFrame, panel: pd.DataFrame) -> None:
     """配对差异（真实数据栈：KF+MF − LogReg_RE = −0.027 p=0.614；
     KF+MF − VAR2 = +0.098 p=0.018）。依赖 artifacts/oos_predictions.csv。"""
     oos_path = get_path("oos_file")
@@ -72,9 +77,9 @@ def test_paired_diff_golden(features: pd.DataFrame) -> None:
     keys = list(zip(test["country"], test["year"]))
     y_kf = np.array([lab[k] for k in keys])
     p_kf = test["p_conflict"].to_numpy()
-    for b, gold_diff, gold_p in ((baseline_logistic_re(features, get_factor_columns()),
+    for b, gold_diff, gold_p in ((baseline_logistic_re(features, get_factor_columns(), panel),
                                   -0.0269, 0.614),
-                                 (baseline_var(features), 0.0978, 0.018)):
+                                 (baseline_var(features, panel), 0.0978, 0.018)):
         pm = {(r["country"], r["year"]): r["p_conflict"] for r in b["test_rows"]}
         mask = np.array([k in pm for k in keys])
         d = paired_bootstrap(y_kf[mask], p_kf[mask],

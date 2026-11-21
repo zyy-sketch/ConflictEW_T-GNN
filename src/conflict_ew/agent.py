@@ -153,10 +153,11 @@ def generate_for_oos(oos_test: pd.DataFrame, shap_df: pd.DataFrame,
     z = norm.ppf(1 - (1 - ci_level) / 2)
     for _, r in oos_test.iterrows():
         p = float(r["p_conflict"])
-        # 简化 CI：经验近似（logit 空间 ±z·0.25，再映射回概率）
+        # 简化 CI：经验近似（logit 空间 ±z·半宽，再映射回概率）；半宽出自 config.agent.ci_logit_halfwidth
+        halfwidth = float(cfg().get("agent", {}).get("ci_logit_halfwidth", 0.25))
         logit = np_logit(p)
-        lo = np_expit(logit - z * 0.25)
-        hi = np_expit(logit + z * 0.25)
+        lo = np_expit(logit - z * halfwidth)
+        hi = np_expit(logit + z * halfwidth)
         ci = {"ci_lower": float(lo), "ci_upper": float(hi), "level": ci_level,
               "method": "logit 近似（经验 SE≈0.25）"}
         shp = {}

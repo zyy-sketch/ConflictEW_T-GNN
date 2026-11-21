@@ -104,6 +104,12 @@ def build_panel(clean_df: pd.DataFrame, audit_report_path=None) -> tuple[pd.Data
     audit.n_countries = panel["iso3"].nunique()
     audit.n_positive = int(panel["y_onset"].sum())
     audit.positive_rate = audit.n_positive / audit.n_rows if audit.n_rows else 0.0
+    # 年度连续性：build_labels 的前瞻窗口按年索引（t, t+1），隐含"同一国家年份无缺口"
+    gap_countries = int(panel.sort_values(["iso3", "year"]).groupby("iso3")["year"]
+                        .apply(lambda s: int((s.diff().dropna() > 1).any())).sum())
+    if gap_countries:
+        audit.issues.append(
+            f"年度不连续国家数: {gap_countries}（存在年份缺口，前瞻标签的窗口语义在该国被截断）")
     target = lcfg["positive_rate_target"]
     if audit.n_positive < 10:
         audit.issues.append(f"正样本过少 ({audit.n_positive})，模型训练不可靠")

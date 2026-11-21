@@ -91,9 +91,9 @@ eval:
 
 alert:
   enabled: true
-  notify_channels: [in-app]              # 站内通知；邮件需配置后启用
+  notify_channels: [in-app]              # 站内通知（邮件通道未实现，保留字段作占位）
   email:
-    enabled: false
+    enabled: false                       # 邮件通知未实现（Phase2 候选）
     smtp_host: ""
     smtp_port: 587
     from_addr: ""
@@ -106,14 +106,17 @@ alert:
     - "核对领土争端（ICOW）与同盟变更（ATOP）事件"
     - "人工复核概率与 SHAP 归因后决定是否升级处置"
 
+agent:
+  ci_logit_halfwidth: 0.25               # 推理链 CI 的经验 logit 半宽（经验近似，非统计区间；见 agent.py）
+
 report:
   supported_types: [monthly, quarterly, custom]
   default_type: quarterly
   self_contained: true                   # 自包含 HTML（内嵌 base64，F18）
-  formats: [html, pdf]
+  formats: [html]                        # pdf 尚未实现（Phase2 候选；勿在此启用）
 
 llm:
-  backend: rule-template                 # rule-template | llama3 | gpt4（Phase2 切换）
+  backend: rule-template                 # 当前唯一实现；llama3/gpt4 为 Phase2 计划项（未实现）
   mock_max_latency_ms: 1000              # Mock 推理链延迟 ≤1s（§13.4）
   api_base: ""
   model: ""

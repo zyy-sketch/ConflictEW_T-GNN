@@ -6,6 +6,8 @@
   "n_excluded_short": 0,
   "excluded_countries": [],
   "orphan_rows": 0,
-  "issues": [],
+  "issues": [
+    "年度不连续国家数: 2（存在年份缺口，前瞻标签的窗口语义在该国被截断）"
+  ],
   "passed": true
 }

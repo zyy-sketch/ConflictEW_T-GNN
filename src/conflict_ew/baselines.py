@@ -141,7 +141,7 @@ def _pack(name: str, label: str, y_te: np.ndarray, p_te: np.ndarray,
     return out
 
 # ---------------------------------------------------------------- (1) LogReg(RE)
-def baseline_logistic_re(features: pd.DataFrame, feat_cols: list[str]) -> dict:
+def baseline_logistic_re(features: pd.DataFrame, feat_cols: list[str], panel: pd.DataFrame) -> dict:
     """规范 LogReg(RE)：类加权 + 无固定效应 + lag1 原始军费增速替代 F1。"""
     cv = cfg()["model"]["cv"]
     cs, ts, te = cv["cv_start"], cv["test_start"], cv["test_end"]
@@ -166,7 +166,6 @@ def baseline_logistic_re(features: pd.DataFrame, feat_cols: list[str]) -> dict:
                             "p_conflict": p_lr_te, "fold": "test"})
     y_te = yv[te_m]
     cm = fbeta_confusion(y_te, p_lr_te, tau)
-    panel = pd.read_csv(get_path("panel_file"))
     return _pack("logistic_RE",
                  "LogReg (RE): rare-events class-weighted logistic (no fixed effects; "
                  "lagged unfiltered expenditure growth replaces F1)", y_te, p_lr_te,
@@ -199,7 +198,7 @@ def baseline_persistence(features: pd.DataFrame, panel: pd.DataFrame) -> dict:
                  "previous year; no training, binary score",
                  y_te, p_te, tau, q, cm, test_df, panel)
 # ---------------------------------------------------------------- (2) VAR(2)
-def baseline_var(features: pd.DataFrame) -> dict:
+def baseline_var(features: pd.DataFrame, panel: pd.DataFrame) -> dict:
     """规范 pooled VAR(2)：OLS 两方程 + OLS-sigmoid 链接（Table III 同式）。"""
     cv = cfg()["model"]["cv"]
     cs, ts, te = cv["cv_start"], cv["test_start"], cv["test_end"]
@@ -243,7 +242,6 @@ def baseline_var(features: pd.DataFrame) -> dict:
     y_te = var_df["y"].to_numpy().astype(int)
     p_te = var_df["p_conflict"].to_numpy()
     cm = fbeta_confusion(y_te, p_te, tau)
-    panel = pd.read_csv(get_path("panel_file"))
     return _pack("VAR2",
                  "VAR(2): pooled two-lag autoregression on [mil growth, GDP growth], "
                  "OLS + logistic link calibrated on the training window",

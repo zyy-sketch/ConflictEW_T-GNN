@@ -17,6 +17,7 @@
         "bss": -0.0985,
         "pred_mean": 0.0146,
         "obs_rate": 0.037,
+        "auc": 0.5447,
         "bins": [
           {
             "lo": 0,
@@ -85,6 +86,7 @@
         "bss": -0.0384,
         "pred_mean": 0.0,
         "obs_rate": 0.037,
+        "auc_after": 0.5,
         "bins": [
           {
             "lo": 0,
@@ -143,7 +145,19 @@
             "obs": null
           }
         ]
-      }
+      },
+      "platt_calibrated": {
+        "brier": 0.0369,
+        "reliability": 0.0013,
+        "resolution": 0.0,
+        "uncertainty": 0.035603,
+        "climatology_brier": 0.0356,
+        "bss": -0.0363,
+        "pred_mean": 0.0008,
+        "obs_rate": 0.037,
+        "auc_after": 0.5447
+      },
+      "calibration_note": "isotonic 在本数据上把测试分塌缩为常数（resolution=0），不可用于排序；需要排序时使用 platt_calibrated（单调，AUC 保持）——两者 Brier 差异极小。"
     },
     "LogReg_RE": {
       "raw": {
@@ -154,7 +168,8 @@
         "climatology_brier": 0.0356,
         "bss": -6.4358,
         "pred_mean": 0.5148,
-        "obs_rate": 0.037
+        "obs_rate": 0.037,
+        "auc": 0.5716
       },
       "isotonic_calibrated": {
         "brier": 0.0355,
@@ -164,7 +179,8 @@
         "climatology_brier": 0.0356,
         "bss": 0.0028,
         "pred_mean": 0.0444,
-        "obs_rate": 0.037
+        "obs_rate": 0.037,
+        "auc_after": 0.6083
       }
     },
     "VAR2": {
@@ -176,7 +192,8 @@
         "climatology_brier": 0.036,
         "bss": -6.3659,
         "pred_mean": 0.5158,
-        "obs_rate": 0.0374
+        "obs_rate": 0.0374,
+        "auc": 0.4479
       },
       "isotonic_calibrated": {
         "brier": 0.0361,
@@ -186,7 +203,8 @@
         "climatology_brier": 0.036,
         "bss": -0.0052,
         "pred_mean": 0.0469,
-        "obs_rate": 0.0374
+        "obs_rate": 0.0374,
+        "auc_after": 0.4495
       },
       "precision_wilson": [
         0.0295,

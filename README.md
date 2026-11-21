@@ -41,7 +41,8 @@ Reproducible research pipeline for the manuscript *"Multi-Indicator Conflict Ear
 | Threshold/budget sensitivity | 13-point τ sweep on validation folds, applied to test — `artifacts/threshold_sensitivity.json`, figure `fig5` |
 | Ablation: drop military-anomaly F1 | **0.6801** (F1 is harmful on real labels) |
 | Ablation: military signal only (F1) | 0.4859 (below chance) |
-| Kalman estimation-window sensitivity (M2) | r = 0.926, flag agreement 98.9% |
+| Kalman estimation-window sensitivity (M2) | pooled r = 0.926 (train-window 0.986, **test-window 0.758**), flag agreement 98.9%; end-to-end train-window refit **AUC 0.6464** (see `scripts/15`) |
+| Calibration note | isotonic collapses test scores to the base rate (resolution = 0, AUC_after ≈ 0.5) — use Platt scaling (`platt_calibrated` in `artifacts/calibration_reliability.json`) when ranking is needed; see also raw-vs-platt Brier in the same file |
 | Test window | 1,650 rows, 61 real onsets |
 
 ## Quick start

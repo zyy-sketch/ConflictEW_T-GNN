@@ -10,11 +10,11 @@
     },
     "artifacts/alerts.json": {
       "bytes": 133,
-      "sha256": "02c4f981dc099eba47156a8c9f8f0ca37e27fc615d3215c914f915977d23634f"
+      "sha256": "1138447e466cf4219c6669abbe467cdcd84dfbd8be70e8bdd9d027924d3cae95"
     },
     "artifacts/calibration_reliability.json": {
-      "bytes": 4838,
-      "sha256": "20eeb94ce4b766480a13c3c421f4a9f9d747c651365c73f28ecf0551240670f7"
+      "bytes": 5527,
+      "sha256": "d94989ea7bce3060586600a0ba90ea89509bcd00c32e076b97481251130498f0"
     },
     "artifacts/factor_registry.json": {
       "bytes": 1063,
@@ -37,8 +37,8 @@
       "sha256": "6117973e44368f0ad3fb4491cf7853613364aaf0e5122a599d75649cc67105ab"
     },
     "artifacts/metrics.json": {
-      "bytes": 370503,
-      "sha256": "2a9e025ace01bc56078e9248f2eba479a183501a5807d844da01d23b8de5363c"
+      "bytes": 6877,
+      "sha256": "8277c4e7cecc3ce0faa6cdae4b453cfcee16b65c039d03386dac418fc1a652a4"
     },
     "artifacts/n4_bootstrap_ci.json": {
       "bytes": 852,
@@ -62,11 +62,11 @@
     },
     "artifacts/reasoning_chains.json": {
       "bytes": 4382582,
-      "sha256": "7ccbdae92685da24fe05e3331245902b59aa535cfad69260c3b201ac66803bc5"
+      "sha256": "830cafd9018bf10556c54ca78ec605106badaaf4ef02e0a1ad602f244b64adc3"
     },
     "artifacts/run_log.jsonl": {
       "bytes": 6853,
-      "sha256": "d4a69112b394d42ec4ca5f8b47ce722dd33cba9f4556b3a5c905941ae1ca52b3"
+      "sha256": "ff83bff4a89acf67679e51be7337397745f8a46a33411d77dd93bf02fc45261d"
     },
     "artifacts/runtime_benchmark.json": {
       "bytes": 732,
