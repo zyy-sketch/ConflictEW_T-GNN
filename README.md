@@ -43,7 +43,7 @@ python scripts/06_repro_check.py                      # two-run determinism chec
 
 All pipeline stages (F01–F18) run inside `run_all.py` (see `src/conflict_ew/pipeline.py`); auxiliary scripts: `06_repro_check.py` (determinism), `09_window_sensitivity.py` / `10_calibration_reliability.py` / `11_secondary_metrics.py` (sensitivity & secondary metrics), `12_export_release.py` (release artifacts + MANIFEST).
 
-> **Note on fresh clones**: `artifacts/` and `data/raw_real.json` are git-ignored and absent after cloning, so golden-regression and end-to-end tests mostly *skip* until you run `python scripts/run_all.py` once to generate them.
+> **Note on fresh clones**: the WDI snapshot `data/raw_real.json` that pins the golden numbers **is included**, so `run_all.py` reproduces the released metrics as-is (live-WDI API drift would otherwise shift results — observed +0.07 AUC on 2026-11-21). Only `artifacts/` is git-ignored and absent after cloning, so golden-regression tests that read pipeline outputs mostly *skip* until you run `python scripts/run_all.py` once to generate them.
 
 ## Data
 
