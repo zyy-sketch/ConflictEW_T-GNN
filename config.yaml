@@ -3,9 +3,9 @@
 
 project:
   name: ConflictEW
-  version: v1.0.0
+  version: v2.0.0-realdata
   seed: 20240101          # 全链路固定种子（PRD §8.2 可复现性）
-  paper_title: "An Auditable Three-Layer Pipeline for Multi-Indicator Geopolitical Risk Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"
+  paper_title: "An Auditable Three-Layer Pipeline for Armed-Conflict Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"
 
 paths:
   data_dir: data
@@ -53,7 +53,8 @@ data:
     end_year: 2024
   labels:
     lookahead_months: 12                 # y=1 ⟺ 后 12 个月内新冲突 onset（§8.2）
-    cow_standards: [use_of_force, battle_deaths_25, state_party_2, incompatibility]
+    cow_standards: [use_of_force, battle_deaths_25, state_party_2, incompatibility]  # UCDP v25.1 state-based criteria (same four conditions); labels come from
+    # data/external_real/cow_conflicts.csv (UCDP Intrastate Onset v25.1 conversion)
     positive_rate_target: 0.025          # 正样本率 ~2-3%
 
 model:

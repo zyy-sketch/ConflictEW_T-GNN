@@ -7,7 +7,7 @@
 - MANIFEST.json：覆盖 artifacts/ 全部发布文件 + 核心数据文件的
   size + SHA-256；version 字段与论文 release 包版本对齐。
 
-用法：python scripts/12_export_release.py [--version v4-unified-2026-11-02]
+用法：python scripts/12_export_release.py [--version v2.0.0-realdata]
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from conflict_ew.paths import get_path  # noqa: E402
 
-VERSION_DEFAULT = "v4-unified-2026-11-02"
+VERSION_DEFAULT = "v2.0.0-realdata"
 
 
 def sha256_of(path: Path) -> str:
