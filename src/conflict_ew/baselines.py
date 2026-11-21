@@ -121,7 +121,7 @@ def _pack(name: str, label: str, y_te: np.ndarray, p_te: np.ndarray,
             "n": int(len(y_te)), "n_test_positive": int(y_te.sum()),
             "auc": round(float(roc_auc_score(y_te, p_te)), 4),
             "auc_ci_delong": [round(lo, 4), round(hi, 4)],
-            "tau": round(float(tau), 6), "tau_quantile": round(q, 4),
+            "tau": round(float(tau), 6), "tau_quantile": round(q, 4) if q is not None else None,
             "fbeta2_at_tau": round(cm["fbeta2"], 4),
             "TP": cm["TP"], "FP": cm["FP"], "FN": cm["FN"], "TN": cm["TN"],
             "flagged": cm["flagged"],
@@ -173,6 +173,31 @@ def baseline_logistic_re(features: pd.DataFrame, feat_cols: list[str]) -> dict:
                  tau, q, cm, test_df, panel, p_train=p_lr_tr, y_train=yv[tr])
 
 
+# ---------------------------------------------------------------- (3) Persistence (naive)
+def baseline_persistence(features: pd.DataFrame, panel: pd.DataFrame) -> dict:
+    """naive persistence 基线（冲突预测文献标准对照）。
+
+    score = 上一年的 active（冲突持续即报警）；无训练、无阈值选择：
+    二值分数下 score >= 1 即报警（tau=1.0，tau_quantile=None）。
+    """
+    cv = cfg()["model"]["cv"]
+    ts, te = cv["test_start"], cv["test_end"]
+    p2 = panel[["iso3", "year", "active"]].sort_values(["iso3", "year"]).copy()
+    p2["active_lag1"] = p2.groupby("iso3")["active"].shift(1)
+    feats = features[["iso3", "year", "y_onset"]].merge(
+        p2[["iso3", "year", "active_lag1"]], on=["iso3", "year"], how="left")
+    te_df = feats[(feats["year"] >= ts) & (feats["year"] <= te)].dropna(subset=["active_lag1"]).copy()
+    y_te = te_df["y_onset"].to_numpy().astype(int)
+    p_te = te_df["active_lag1"].to_numpy().astype(float)
+    tau, q = 1.0, None
+    cm = fbeta_confusion(y_te, p_te, tau)
+    test_df = pd.DataFrame({"country": te_df["iso3"].to_numpy(),
+                            "year": te_df["year"].to_numpy().astype(int),
+                            "p_conflict": p_te, "fold": "test"})
+    return _pack("persistence",
+                 "Persistence (naive): flag countries that were active in conflict in the "
+                 "previous year; no training, binary score",
+                 y_te, p_te, tau, q, cm, test_df, panel)
 # ---------------------------------------------------------------- (2) VAR(2)
 def baseline_var(features: pd.DataFrame) -> dict:
     """规范 pooled VAR(2)：OLS 两方程 + OLS-sigmoid 链接（Table III 同式）。"""

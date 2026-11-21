@@ -1,0 +1,722 @@
+{
+  "provenance": {
+    "source": "SIPRI Military Expenditure Database",
+    "url": "https://www.sipri.org/sites/default/files/SIPRI-Milex-data-1949-2025_v1.2.xlsx",
+    "version": "v1.2 (revised 2026-04-27; DOI 10.55163/CQGC9685)",
+    "downloaded_at": "2026-11-14",
+    "sha256": "6cc3a30b1064f9f02e60236667eef82e08cad42910ce630909d004ad2c398a9d",
+    "bytes": 922552,
+    "license": "CC BY 4.0（商业使用需 SIPRI 授权）；用于口径核验",
+    "wdi_series": "MS.MIL.XPND.CD (current US$), snapshot 2024-06-20"
+  },
+  "n_compared": 100,
+  "n_missing": 0,
+  "unresolved_countries": [],
+  "share_within_1pct": 0.86,
+  "share_within_0.1pct": 0.76,
+  "median_rel_diff": 0.0,
+  "max_rel_diff": 0.059838,
+  "comparisons": [
+    {
+      "iso3": "USA",
+      "year": 2000,
+      "sipri_musd": 320086.3242111956,
+      "wdi_usd": 320086324211.196,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "USA",
+      "year": 2010,
+      "sipri_musd": 738005.0,
+      "wdi_usd": 738005000000.0,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "USA",
+      "year": 2015,
+      "sipri_musd": 633829.639,
+      "wdi_usd": 633829639000.0,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "USA",
+      "year": 2020,
+      "sipri_musd": 778397.2,
+      "wdi_usd": 778397200000.0,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "USA",
+      "year": 2023,
+      "sipri_musd": 916014.7,
+      "wdi_usd": 916014700000.0,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "CHN",
+      "year": 2000,
+      "sipri_musd": 22237.140151214495,
+      "wdi_usd": 22237140151.2145,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "CHN",
+      "year": 2010,
+      "sipri_musd": 105522.64810183836,
+      "wdi_usd": 105522648101.838,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "CHN",
+      "year": 2015,
+      "sipri_musd": 196538.82723079034,
+      "wdi_usd": 196538827230.79,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "CHN",
+      "year": 2020,
+      "sipri_musd": 258019.51336541362,
+      "wdi_usd": 257973429833.565,
+      "rel_diff": 0.000179
+    },
+    {
+      "iso3": "CHN",
+      "year": 2023,
+      "sipri_musd": 296256.20913908485,
+      "wdi_usd": 296821377591.502,
+      "rel_diff": 0.001908
+    },
+    {
+      "iso3": "RUS",
+      "year": 2000,
+      "sipri_musd": 9228.204143736757,
+      "wdi_usd": 9228204143.73676,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "RUS",
+      "year": 2010,
+      "sipri_musd": 58720.22760875794,
+      "wdi_usd": 58720227608.7579,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "RUS",
+      "year": 2015,
+      "sipri_musd": 66421.82217992056,
+      "wdi_usd": 66421822179.9206,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "RUS",
+      "year": 2020,
+      "sipri_musd": 61883.78992692248,
+      "wdi_usd": 61712537168.9371,
+      "rel_diff": 0.002767
+    },
+    {
+      "iso3": "RUS",
+      "year": 2023,
+      "sipri_musd": 109203.62473837858,
+      "wdi_usd": 109203624738.379,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "GBR",
+      "year": 2000,
+      "sipri_musd": 39343.71127257817,
+      "wdi_usd": 39343711272.5782,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "GBR",
+      "year": 2010,
+      "sipri_musd": 63979.111970269434,
+      "wdi_usd": 63979111970.2694,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "GBR",
+      "year": 2015,
+      "sipri_musd": 59990.20571932446,
+      "wdi_usd": 59990205719.3245,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "GBR",
+      "year": 2020,
+      "sipri_musd": 58332.3717948718,
+      "wdi_usd": 58332371794.8718,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "GBR",
+      "year": 2023,
+      "sipri_musd": 73609.22425837167,
+      "wdi_usd": 75303387480.0181,
+      "rel_diff": 0.023016
+    },
+    {
+      "iso3": "DEU",
+      "year": 2000,
+      "sipri_musd": 26440.4657520856,
+      "wdi_usd": 26374817230.8916,
+      "rel_diff": 0.002483
+    },
+    {
+      "iso3": "DEU",
+      "year": 2010,
+      "sipri_musd": 43067.897143101116,
+      "wdi_usd": 43025915011.688,
+      "rel_diff": 0.000975
+    },
+    {
+      "iso3": "DEU",
+      "year": 2015,
+      "sipri_musd": 38187.11259434534,
+      "wdi_usd": 38170021071.3098,
+      "rel_diff": 0.000448
+    },
+    {
+      "iso3": "DEU",
+      "year": 2020,
+      "sipri_musd": 53427.93629027161,
+      "wdi_usd": 53318705117.9756,
+      "rel_diff": 0.002044
+    },
+    {
+      "iso3": "DEU",
+      "year": 2023,
+      "sipri_musd": 68584.87336429147,
+      "wdi_usd": 67285198637.8624,
+      "rel_diff": 0.01895
+    },
+    {
+      "iso3": "FRA",
+      "year": 2000,
+      "sipri_musd": 28473.83608578663,
+      "wdi_usd": 28403138948.7059,
+      "rel_diff": 0.002483
+    },
+    {
+      "iso3": "FRA",
+      "year": 2010,
+      "sipri_musd": 52094.842067068545,
+      "wdi_usd": 52044060565.0524,
+      "rel_diff": 0.000975
+    },
+    {
+      "iso3": "FRA",
+      "year": 2015,
+      "sipri_musd": 45667.91136757406,
+      "wdi_usd": 45647471640.5013,
+      "rel_diff": 0.000448
+    },
+    {
+      "iso3": "FRA",
+      "year": 2020,
+      "sipri_musd": 53532.44723424048,
+      "wdi_usd": 53423002393.708,
+      "rel_diff": 0.002044
+    },
+    {
+      "iso3": "FRA",
+      "year": 2023,
+      "sipri_musd": 59541.1382392168,
+      "wdi_usd": 59491964166.1013,
+      "rel_diff": 0.000826
+    },
+    {
+      "iso3": "JPN",
+      "year": 2000,
+      "sipri_musd": 45509.67382730942,
+      "wdi_usd": 45509673827.3094,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "JPN",
+      "year": 2010,
+      "sipri_musd": 54655.45073530501,
+      "wdi_usd": 54655450735.305,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "JPN",
+      "year": 2015,
+      "sipri_musd": 42106.10330579276,
+      "wdi_usd": 42106103305.7928,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "JPN",
+      "year": 2020,
+      "sipri_musd": 51388.072739201816,
+      "wdi_usd": 51396536058.5254,
+      "rel_diff": 0.000165
+    },
+    {
+      "iso3": "JPN",
+      "year": 2023,
+      "sipri_musd": 48096.46302863076,
+      "wdi_usd": 48189108621.3905,
+      "rel_diff": 0.001926
+    },
+    {
+      "iso3": "IND",
+      "year": 2000,
+      "sipri_musd": 14287.514240703491,
+      "wdi_usd": 14287514240.7035,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "IND",
+      "year": 2010,
+      "sipri_musd": 46090.44565650027,
+      "wdi_usd": 46090445656.5003,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "IND",
+      "year": 2015,
+      "sipri_musd": 51295.483753943605,
+      "wdi_usd": 51295483753.9436,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "IND",
+      "year": 2020,
+      "sipri_musd": 72815.43572954128,
+      "wdi_usd": 72937064047.7993,
+      "rel_diff": 0.00167
+    },
+    {
+      "iso3": "IND",
+      "year": 2023,
+      "sipri_musd": 82262.1715631578,
+      "wdi_usd": 82293332162.5812,
+      "rel_diff": 0.000379
+    },
+    {
+      "iso3": "BRA",
+      "year": 2000,
+      "sipri_musd": 11344.032534901771,
+      "wdi_usd": 11344032534.9018,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "BRA",
+      "year": 2010,
+      "sipri_musd": 34002.94447002382,
+      "wdi_usd": 34002944470.0238,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "BRA",
+      "year": 2015,
+      "sipri_musd": 24617.70168306547,
+      "wdi_usd": 24617701683.0655,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "BRA",
+      "year": 2020,
+      "sipri_musd": 19591.20900446342,
+      "wdi_usd": 19591209004.4634,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "BRA",
+      "year": 2023,
+      "sipri_musd": 21788.291072488297,
+      "wdi_usd": 21788291072.4883,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "TUR",
+      "year": 2000,
+      "sipri_musd": 9993.730196938994,
+      "wdi_usd": 9993730196.93899,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "TUR",
+      "year": 2010,
+      "sipri_musd": 17650.464118175463,
+      "wdi_usd": 17650464118.1755,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "TUR",
+      "year": 2015,
+      "sipri_musd": 15668.749999999998,
+      "wdi_usd": 15668750000.0,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "TUR",
+      "year": 2020,
+      "sipri_musd": 15815.406712034832,
+      "wdi_usd": 15782990905.8308,
+      "rel_diff": 0.00205
+    },
+    {
+      "iso3": "TUR",
+      "year": 2023,
+      "sipri_musd": 19233.041584176848,
+      "wdi_usd": 19577831923.5437,
+      "rel_diff": 0.017927
+    },
+    {
+      "iso3": "ISR",
+      "year": 2000,
+      "sipri_musd": 8207.420459420304,
+      "wdi_usd": 8327543752.99401,
+      "rel_diff": 0.014636
+    },
+    {
+      "iso3": "ISR",
+      "year": 2010,
+      "sipri_musd": 13671.57235816281,
+      "wdi_usd": 13875211595.7068,
+      "rel_diff": 0.014895
+    },
+    {
+      "iso3": "ISR",
+      "year": 2015,
+      "sipri_musd": 15975.541957892043,
+      "wdi_usd": 16457098752.1976,
+      "rel_diff": 0.030143
+    },
+    {
+      "iso3": "ISR",
+      "year": 2020,
+      "sipri_musd": 21049.888662790698,
+      "wdi_usd": 21816569767.4419,
+      "rel_diff": 0.036422
+    },
+    {
+      "iso3": "ISR",
+      "year": 2023,
+      "sipri_musd": 27102.92800616771,
+      "wdi_usd": 27498527856.8524,
+      "rel_diff": 0.014596
+    },
+    {
+      "iso3": "SAU",
+      "year": 2000,
+      "sipri_musd": 19964.266666666666,
+      "wdi_usd": 19964266666.6667,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "SAU",
+      "year": 2010,
+      "sipri_musd": 45244.53333333333,
+      "wdi_usd": 45244533333.3333,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "SAU",
+      "year": 2015,
+      "sipri_musd": 87185.86666666667,
+      "wdi_usd": 87185866666.6667,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "SAU",
+      "year": 2020,
+      "sipri_musd": 64558.4,
+      "wdi_usd": 64558400000.0,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "SAU",
+      "year": 2023,
+      "sipri_musd": 77765.33333333333,
+      "wdi_usd": 77765333333.3333,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "KOR",
+      "year": 2000,
+      "sipri_musd": 13801.1070241211,
+      "wdi_usd": 13801107024.1211,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "KOR",
+      "year": 2010,
+      "sipri_musd": 28175.181218967875,
+      "wdi_usd": 28175181218.9679,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "KOR",
+      "year": 2015,
+      "sipri_musd": 36570.76932257444,
+      "wdi_usd": 36570769322.5744,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "KOR",
+      "year": 2020,
+      "sipri_musd": 46117.09657458188,
+      "wdi_usd": 46117096574.5819,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "KOR",
+      "year": 2023,
+      "sipri_musd": 47801.863038878735,
+      "wdi_usd": 47801863038.8787,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "CAN",
+      "year": 2000,
+      "sipri_musd": 8299.38523072365,
+      "wdi_usd": 8299385230.72365,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "CAN",
+      "year": 2010,
+      "sipri_musd": 19315.688825036887,
+      "wdi_usd": 19315688825.0369,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "CAN",
+      "year": 2015,
+      "sipri_musd": 18221.578234752535,
+      "wdi_usd": 17937641894.7407,
+      "rel_diff": 0.015582
+    },
+    {
+      "iso3": "CAN",
+      "year": 2020,
+      "sipri_musd": 23457.917015287097,
+      "wdi_usd": 23082774049.217,
+      "rel_diff": 0.015992
+    },
+    {
+      "iso3": "CAN",
+      "year": 2023,
+      "sipri_musd": 28878.130615249378,
+      "wdi_usd": 27227653114.1228,
+      "rel_diff": 0.057153
+    },
+    {
+      "iso3": "AUS",
+      "year": 2000,
+      "sipri_musd": 7273.760312610518,
+      "wdi_usd": 7273760312.61052,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "AUS",
+      "year": 2010,
+      "sipri_musd": 23217.69281573347,
+      "wdi_usd": 23217692815.7335,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "AUS",
+      "year": 2015,
+      "sipri_musd": 24046.205860255446,
+      "wdi_usd": 24046205860.2554,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "AUS",
+      "year": 2020,
+      "sipri_musd": 27300.894700619407,
+      "wdi_usd": 27300894700.6194,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "AUS",
+      "year": 2023,
+      "sipri_musd": 32387.98979774595,
+      "wdi_usd": 32387989797.746,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "POL",
+      "year": 2000,
+      "sipri_musd": 3146.106712501179,
+      "wdi_usd": 3146106712.50118,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "POL",
+      "year": 2010,
+      "sipri_musd": 8790.170132325142,
+      "wdi_usd": 8790170132.32514,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "POL",
+      "year": 2015,
+      "sipri_musd": 10212.785780607508,
+      "wdi_usd": 10212785780.6075,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "POL",
+      "year": 2020,
+      "sipri_musd": 13712.164694669968,
+      "wdi_usd": 13718291431.5033,
+      "rel_diff": 0.000447
+    },
+    {
+      "iso3": "POL",
+      "year": 2023,
+      "sipri_musd": 26459.28157957343,
+      "wdi_usd": 26342764301.5826,
+      "rel_diff": 0.004404
+    },
+    {
+      "iso3": "NOR",
+      "year": 2000,
+      "sipri_musd": 2922.343509993365,
+      "wdi_usd": 2922343509.99336,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "NOR",
+      "year": 2010,
+      "sipri_musd": 6498.659038379133,
+      "wdi_usd": 6498659038.37913,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "NOR",
+      "year": 2015,
+      "sipri_musd": 5815.228174603174,
+      "wdi_usd": 5815228174.60317,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "NOR",
+      "year": 2020,
+      "sipri_musd": 7225.183140460771,
+      "wdi_usd": 7225183140.46077,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "NOR",
+      "year": 2023,
+      "sipri_musd": 8799.400441779768,
+      "wdi_usd": 8797762486.63076,
+      "rel_diff": 0.000186
+    },
+    {
+      "iso3": "NGA",
+      "year": 2000,
+      "sipri_musd": 368.64410946242265,
+      "wdi_usd": 368644109.462423,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "NGA",
+      "year": 2010,
+      "sipri_musd": 1990.0996686582655,
+      "wdi_usd": 1990099668.65827,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "NGA",
+      "year": 2015,
+      "sipri_musd": 2065.557663350914,
+      "wdi_usd": 2065557663.35091,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "NGA",
+      "year": 2020,
+      "sipri_musd": 2717.058704613596,
+      "wdi_usd": 2567917819.04386,
+      "rel_diff": 0.054891
+    },
+    {
+      "iso3": "NGA",
+      "year": 2023,
+      "sipri_musd": 3061.7144489270245,
+      "wdi_usd": 3101259562.89729,
+      "rel_diff": 0.012916
+    },
+    {
+      "iso3": "ZAF",
+      "year": 2000,
+      "sipri_musd": 1891.7250134369287,
+      "wdi_usd": 1891725013.43693,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "ZAF",
+      "year": 2010,
+      "sipri_musd": 4188.168092203212,
+      "wdi_usd": 4188168092.20321,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "ZAF",
+      "year": 2015,
+      "sipri_musd": 3488.8679478399654,
+      "wdi_usd": 3488867947.83997,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "ZAF",
+      "year": 2020,
+      "sipri_musd": 3232.763794759475,
+      "wdi_usd": 3231017731.35778,
+      "rel_diff": 0.00054
+    },
+    {
+      "iso3": "ZAF",
+      "year": 2023,
+      "sipri_musd": 3059.5435189838945,
+      "wdi_usd": 2876466038.91346,
+      "rel_diff": 0.059838
+    },
+    {
+      "iso3": "ARG",
+      "year": 2000,
+      "sipri_musd": 3266.633316658329,
+      "wdi_usd": 3266633316.65833,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "ARG",
+      "year": 2010,
+      "sipri_musd": 3475.348407463491,
+      "wdi_usd": 3475348407.46349,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "ARG",
+      "year": 2015,
+      "sipri_musd": 5482.616700963933,
+      "wdi_usd": 5482616700.96393,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "ARG",
+      "year": 2020,
+      "sipri_musd": 2830.9297052154193,
+      "wdi_usd": 2830929705.21542,
+      "rel_diff": 0.0
+    },
+    {
+      "iso3": "ARG",
+      "year": 2023,
+      "sipri_musd": 4882.352998999768,
+      "wdi_usd": 4882352998.99977,
+      "rel_diff": 0.0
+    }
+  ],
+  "conclusion": "若一致率高（>90% country-years <1%），支持论文口径描述：WDI MS.MIL.XPND.CD 即 SIPRI 口径（现价美元）转发；差异来自 SIPRI 年度修订版本与快照日期。"
+}

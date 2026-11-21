@@ -9,13 +9,14 @@ Reproducible research pipeline for the manuscript *"Multi-Indicator Conflict Ear
 | Path | Content |
 |---|---|
 | `src/conflict_ew/` | Pipeline library (data, Kalman, factors, XGBoost, baselines, metrics, agent) |
-| `scripts/` | Stage runners `00`–`06`, sensitivity/calibration `09`–`11`, release tooling `12`, provenance `fetch_external.py`, `verify_wdi_sipri.py` |
-| `tests/` | 33 tests incl. look-ahead-leakage suite (L1–L3, L5; L4 = disclosed exception) and golden-value regressions |
+| `scripts/` | `run_all.py` (single entry point), determinism `06_repro_check.py`, sensitivity/calibration/secondary `09`–`11`, release tooling `12`, paper figures `13_generate_figures.py`, threshold sweep `14_threshold_sensitivity.py`, train-window refit `15_train_window_refit.py`, provenance `fetch_external.py`, `verify_wdi_sipri.py` |
+| `tests/` | 34 tests incl. look-ahead-leakage suite (L1–L3, L5; L4 = disclosed exception) and golden-value regressions |
 | `config.yaml` | Every hyperparameter, seed, and path (no magic numbers in code) |
 | `PROVENANCE.md` | Data source chain, SHA-256 registry, and a required disclosure on simulated external covariates |
 | `data/external/raw/` | Official raw downloads (Polity5, COW Intra-State Wars v5.1, COW Direct Contiguity v3.2) |
 | `data/external_real/` | Converted official originals — consumed by the pipeline when `data.external_source: real` (default since A2) |
 | `reports/` | Self-contained pipeline reports (`run_all.py` output) |
+| `artifacts/` | Released result artifacts — metrics, OOS predictions, model JSON, SHAP, sensitivity JSONs, figures — committed via a whitelist (bulky operational files stay local) |
 | `dashboard_v3.html`, `dashboard_rt.html` | Static/real-time demo dashboards — **hard-coded demo data, not pipeline output** |
 
 ## Headline reproduced numbers (golden regressions in `tests/`, real-data stack)
@@ -26,6 +27,9 @@ Reproducible research pipeline for the manuscript *"Multi-Indicator Conflict Ear
 | Brier (before → after isotonic calibration) | 0.0391 → 0.0370 |
 | Rare-events logistic baseline | 0.5716 [0.4897, 0.6534] (paired diff −0.027, p=0.61 n.s.) |
 | Pooled VAR(2) baseline | 0.4479 [0.3739, 0.5219] (paired diff +0.098, p=0.018) |
+| Persistence (naive, lagged active) baseline | 0.3987 [0.3888, 0.4086] (paired diff +0.146, p≈0, FDR sig.) |
+| **Kalman hyperparams re-estimated on training window only** | **0.6464 [0.5831, 0.7098]** — end-to-end refit (`scripts/15`); the disclosed full-sequence-MLE spec *understates* the model (R1 decision pending on which spec is primary) |
+| Threshold/budget sensitivity | 13-point τ sweep on validation folds, applied to test — `artifacts/threshold_sensitivity.json`, figure `fig5` |
 | Ablation: drop military-anomaly F1 | **0.6801** (F1 is harmful on real labels) |
 | Ablation: military signal only (F1) | 0.4859 (below chance) |
 | Kalman estimation-window sensitivity (M2) | r = 0.926, flag agreement 98.9% |
@@ -43,7 +47,7 @@ python scripts/06_repro_check.py                      # two-run determinism chec
 
 All pipeline stages (F01–F18) run inside `run_all.py` (see `src/conflict_ew/pipeline.py`); auxiliary scripts: `06_repro_check.py` (determinism), `09_window_sensitivity.py` / `10_calibration_reliability.py` / `11_secondary_metrics.py` (sensitivity & secondary metrics), `12_export_release.py` (release artifacts + MANIFEST).
 
-> **Note on fresh clones**: the WDI snapshot `data/raw_real.json` that pins the golden numbers **is included**, so `run_all.py` reproduces the released metrics as-is (live-WDI API drift would otherwise shift results — observed +0.07 AUC on 2026-11-21). Only `artifacts/` is git-ignored and absent after cloning, so golden-regression tests that read pipeline outputs mostly *skip* until you run `python scripts/run_all.py` once to generate them.
+> **Note on fresh clones**: the WDI snapshot `data/raw_real.json` that pins the golden numbers **is included**, so `run_all.py` reproduces the released metrics as-is (live-WDI API drift would otherwise shift results — observed +0.07 AUC on 2026-11-21). Core result artifacts (`artifacts/metrics.json`, OOS predictions, model JSON, figures) are also committed, so the golden regressions run against released outputs immediately; `python scripts/run_all.py` regenerates everything deterministically.
 
 ## Data
 
@@ -57,7 +61,7 @@ All pipeline stages (F01–F18) run inside `run_all.py` (see `src/conflict_ew/pi
 - Strictly out-of-sample evaluation: blocked expanding-window CV with `test_start: 2015`; features use ≤ t−1 information only (look-ahead suite L1–L3/L5 in `tests/test_lookahead.py`; the Kalman full-sequence MLE is a disclosed exception, quantified by the sensitivity analysis).
 - Rare-event handling: `scale_pos_weight` (XGBoost) and King–Zeng prior correction (logistic baseline).
 - Uncertainty: DeLong CIs, paired bootstrap with BH-FDR correction, Wilson intervals, parametric bootstrap for Brier.
-- Release artifacts (model JSON, OOS predictions, SHAP values, MANIFEST with size+SHA-256) are generated by `scripts/12_export_release.py`; `artifacts/` is git-ignored and archived to Zenodo at submission time.
+- Release artifacts (model JSON, OOS predictions, SHAP values, MANIFEST with size+SHA-256) are generated by `scripts/12_export_release.py`; core artifacts are **versioned via a whitelist** in `.gitignore`, bulky operational files (`reasoning_chains.json`, alerts, run-log) stay local, and a frozen Zenodo archive is still planned at submission.
 
 ## Demo dashboards (not part of the scientific claims)
 

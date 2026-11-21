@@ -1,0 +1,35 @@
+{
+  "hardware": {
+    "cpu": "Intel64 Family 6 Model 165 Stepping 5, GenuineIntel",
+    "platform": "Windows-11-10.0.22631-SP0",
+    "python": "3.13.14"
+  },
+  "dependencies": {
+    "xgboost": "3.4.1",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5"
+  },
+  "model_file": {
+    "path": "artifacts/xgb_model.json",
+    "bytes": 344340
+  },
+  "feature_matrix": {
+    "rows": 1650,
+    "cols": 9,
+    "bytes": 59400
+  },
+  "batch_inference": {
+    "n_repeats": 50,
+    "rows": 1650,
+    "mean_ms": 0.167,
+    "std_ms": 0.059,
+    "per_row_us": 0.1
+  },
+  "single_row_inference": {
+    "n_probes": 50,
+    "repeats_each": 20,
+    "median_ms": 0.157,
+    "p90_ms": 0.1847
+  },
+  "measured_at": "2026-11-15"
+}

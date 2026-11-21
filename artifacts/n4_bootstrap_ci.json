@@ -1,0 +1,44 @@
+{
+  "KF+MF": {
+    "partial_auc_0_0.1": {
+      "point": 0.0311,
+      "ci_lower": 0.0087,
+      "ci_upper": 0.0984,
+      "n_boot": 1000
+    },
+    "precision_at_100": {
+      "point": 0.06,
+      "ci_lower": 0.02,
+      "ci_upper": 0.11,
+      "n_boot": 1000
+    }
+  },
+  "LogReg_RE": {
+    "partial_auc_0_0.1": {
+      "point": 0.0548,
+      "ci_lower": 0.0319,
+      "ci_upper": 0.1404,
+      "n_boot": 1000
+    },
+    "precision_at_100": {
+      "point": 0.04,
+      "ci_lower": 0.01,
+      "ci_upper": 0.1,
+      "n_boot": 1000
+    }
+  },
+  "VAR2": {
+    "partial_auc_0_0.1": {
+      "point": 0.008,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0842,
+      "n_boot": 1000
+    },
+    "precision_at_100": {
+      "point": 0.03,
+      "ci_lower": 0.0,
+      "ci_upper": 0.07,
+      "n_boot": 1000
+    }
+  }
+}

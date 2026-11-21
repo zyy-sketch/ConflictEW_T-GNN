@@ -1,0 +1,208 @@
+{
+  "isotonic_fit": {
+    "n_val": 2640,
+    "n_val_pos": 106,
+    "n_val_folds": 4,
+    "KF+MF": "oos 验证折（M6 规范）",
+    "LogReg_RE/VAR2": "各自训练期 in-sample 分数（与 τ 规则同口径）"
+  },
+  "models": {
+    "KF+MF": {
+      "raw": {
+        "brier": 0.0391,
+        "reliability": 0.0036,
+        "resolution": 1.2e-05,
+        "uncertainty": 0.035603,
+        "climatology_brier": 0.0356,
+        "bss": -0.0985,
+        "pred_mean": 0.0146,
+        "obs_rate": 0.037,
+        "bins": [
+          {
+            "lo": 0,
+            "hi": 0.125,
+            "n": 1596,
+            "pred": 0.0038,
+            "obs": 0.0363
+          },
+          {
+            "lo": 0.125,
+            "hi": 0.25,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.25,
+            "hi": 0.375,
+            "n": 54,
+            "pred": 0.3333,
+            "obs": 0.0556
+          },
+          {
+            "lo": 0.375,
+            "hi": 0.5,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.5,
+            "hi": 0.625,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.625,
+            "hi": 0.75,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.75,
+            "hi": 0.875,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.875,
+            "hi": 1.0,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          }
+        ]
+      },
+      "isotonic_calibrated": {
+        "brier": 0.037,
+        "reliability": 0.0014,
+        "resolution": 0.0,
+        "uncertainty": 0.035603,
+        "climatology_brier": 0.0356,
+        "bss": -0.0384,
+        "pred_mean": 0.0,
+        "obs_rate": 0.037,
+        "bins": [
+          {
+            "lo": 0,
+            "hi": 0.125,
+            "n": 1650,
+            "pred": 0.0,
+            "obs": 0.037
+          },
+          {
+            "lo": 0.125,
+            "hi": 0.25,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.25,
+            "hi": 0.375,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.375,
+            "hi": 0.5,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.5,
+            "hi": 0.625,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.625,
+            "hi": 0.75,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.75,
+            "hi": 0.875,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          },
+          {
+            "lo": 0.875,
+            "hi": 1.0,
+            "n": 0,
+            "pred": null,
+            "obs": null
+          }
+        ]
+      }
+    },
+    "LogReg_RE": {
+      "raw": {
+        "brier": 0.2647,
+        "reliability": 0.2294,
+        "resolution": 1.6e-05,
+        "uncertainty": 0.035603,
+        "climatology_brier": 0.0356,
+        "bss": -6.4358,
+        "pred_mean": 0.5148,
+        "obs_rate": 0.037
+      },
+      "isotonic_calibrated": {
+        "brier": 0.0355,
+        "reliability": 0.0002,
+        "resolution": 0.000111,
+        "uncertainty": 0.035603,
+        "climatology_brier": 0.0356,
+        "bss": 0.0028,
+        "pred_mean": 0.0444,
+        "obs_rate": 0.037
+      }
+    },
+    "VAR2": {
+      "raw": {
+        "brier": 0.2649,
+        "reliability": 0.2289,
+        "resolution": 0.0,
+        "uncertainty": 0.035959,
+        "climatology_brier": 0.036,
+        "bss": -6.3659,
+        "pred_mean": 0.5158,
+        "obs_rate": 0.0374
+      },
+      "isotonic_calibrated": {
+        "brier": 0.0361,
+        "reliability": 0.0001,
+        "resolution": 0.0,
+        "uncertainty": 0.035959,
+        "climatology_brier": 0.036,
+        "bss": -0.0052,
+        "pred_mean": 0.0469,
+        "obs_rate": 0.0374
+      },
+      "precision_wilson": [
+        0.0295,
+        0.0482
+      ],
+      "wilson_inputs": {
+        "TP": 61,
+        "flagged": 1614
+      },
+      "brier_param_bootstrap": {
+        "brier": 0.2649,
+        "ci_lower": 0.2646,
+        "ci_upper": 0.2652,
+        "n_boot": 2000,
+        "procedure": "k~Bin(n, base_rate); positives placed uniformly at random"
+      }
+    }
+  }
+}

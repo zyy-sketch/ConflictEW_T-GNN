@@ -1,0 +1,17 @@
+{
+  "rule": "\u5bf9\u7167\u53e3\u5f84 = \u4ece\u6d4b\u8bd5\u7a97\u8bc4\u4f30\u4e2d\u5254\u9664\u4efb\u4e00 F3 \u5206\u91cf\u539f\u59cb\u7f3a\u5931\u7684\u884c\uff08\u96f6\u586b\u5145\u524d\u7684 NaN \u63a9\u7801\uff09\uff0c\u9884\u6d4b\u4e0d\u6539\u3001\u4e0d\u91cd\u8bad\u7ec3",
+  "n_test_full": 1650,
+  "n_imputed_rows": 90,
+  "imputed_share": 0.0545,
+  "positives_in_imputed": 1,
+  "KF_MF": {
+    "auc_full": 0.5447,
+    "auc_drop_imputed": 0.5507,
+    "diff": 0.006
+  },
+  "LogReg_RE": {
+    "auc_full": 0.5716,
+    "auc_drop_imputed": 0.5713,
+    "diff": -0.0002
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "n_estimators": 300,
+  "max_depth": 3,
+  "learning_rate": 0.05,
+  "subsample": 0.8,
+  "colsample_bytree": 0.8,
+  "l2_reg": 1.0,
+  "min_child_weight": 2,
+  "scale_pos_weight_auto": true,
+  "random_state": 20240101,
+  "cv_windows": [
+    "val_fold_1",
+    "val_fold_2",
+    "val_fold_3",
+    "val_fold_4",
+    "full_train"
+  ],
+  "model_version": "v1.0.0",
+  "test_start": 2015,
+  "test_end": 2024,
+  "train_end": 2014,
+  "calibration": "isotonic"
+}

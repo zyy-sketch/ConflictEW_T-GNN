@@ -1,0 +1,26 @@
+{
+  "finding": "管线的 Kalman 超参在每国全序列（1970-2024，含测试窗）上以 MLE 估计；一步预测残差本身因果，但超参使用了测试期信息。",
+  "n_countries_refit": 165,
+  "n_obs_train_range": [
+    24,
+    45
+  ],
+  "pooled_pearson_r_all_years": 0.926,
+  "pooled_pearson_r_train_window": 0.9864,
+  "pooled_pearson_r_test_window": 0.7584,
+  "per_country_pearson_r_median": 0.9995,
+  "per_country_pearson_r_min": 0.3128,
+  "per_country_pearson_r_p25": 0.9969,
+  "per_country_n": 165,
+  "median_rmse": 0.0868,
+  "median_sign_agreement": 1.0,
+  "f1_feature_corr_with_trainwindow_variant": 0.926,
+  "anomaly_flag_agreement_rate": 0.9886,
+  "n_diverged_countries_pipeline": 15,
+  "n_countries_pipeline": 165,
+  "n_obs_pipeline_range": [
+    34,
+    55
+  ],
+  "n_converged_pipeline": 165
+}

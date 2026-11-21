@@ -1,0 +1,15 @@
+{
+  "finding": "Kalman 超参改为仅训练窗(<=2014) MLE 估计、冻结后前推，端到端重跑特征/模型/评估；与发布版（全序列 MLE）对比该已披露例外的影响。",
+  "n_countries_refit": 165,
+  "n_test": 1650,
+  "n_test_positive": 61,
+  "refit_auc": 0.6464,
+  "refit_auc_ci_delong": [
+    0.5831,
+    0.7098
+  ],
+  "refit_brier_raw": 0.0714,
+  "released_auc": 0.5447,
+  "delta_auc_vs_released": 0.1017,
+  "interpretation": "若 |delta| 小于 DeLong 半宽，说明该例外的披露不影响主结论方向；本文以敏感性分析（M2：r=0.926/flag 一致率 98.9%）作为稳健性证据。"
+}

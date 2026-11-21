@@ -1,0 +1,120 @@
+{
+  "version": "v4-unified-2026-11-02",
+  "generated_at": "2026-11-21",
+  "note": "对每个发布文件登记 size 与 SHA-256；用于核验发布工件与记录运行产物一致。",
+  "n_files": 28,
+  "files": {
+    "artifacts/alert_history.json": {
+      "bytes": 268371,
+      "sha256": "5cda588648e5a051ebaff568788542d37f7c84067bfe1239236dc239a9ea603b"
+    },
+    "artifacts/alerts.json": {
+      "bytes": 133,
+      "sha256": "c8944399a6ede488f55c851569f69eb865b3699406638b098c50fbde9bc67570"
+    },
+    "artifacts/calibration_reliability.json": {
+      "bytes": 4838,
+      "sha256": "20eeb94ce4b766480a13c3c421f4a9f9d747c651365c73f28ecf0551240670f7"
+    },
+    "artifacts/factor_registry.json": {
+      "bytes": 1063,
+      "sha256": "0c8b806b9bcc52259b49fd75239137089c5a0a86442993231efc9d0487de8dad"
+    },
+    "artifacts/m2_per_country_comparison.csv": {
+      "bytes": 5563,
+      "sha256": "6b1b71ad2d132009f7e42124ce8c7c4b5f4b4f94a5ff654b6326b2be37a995d6"
+    },
+    "artifacts/m2_refit_end_to_end.json": {
+      "bytes": 645,
+      "sha256": "3c0028fada3f16109845e61fb9fbf8f55e7d95d8ef25cd4746d2c1922c762a87"
+    },
+    "artifacts/m2_window_sensitivity.json": {
+      "bytes": 845,
+      "sha256": "b51d5702216f49403a4f1614ec88744b828e2f3b75899dd5f022f4a9229c0880"
+    },
+    "artifacts/m3_price_diagnostic.json": {
+      "bytes": 433,
+      "sha256": "6117973e44368f0ad3fb4491cf7853613364aaf0e5122a599d75649cc67105ab"
+    },
+    "artifacts/metrics.json": {
+      "bytes": 370503,
+      "sha256": "2a9e025ace01bc56078e9248f2eba479a183501a5807d844da01d23b8de5363c"
+    },
+    "artifacts/n4_bootstrap_ci.json": {
+      "bytes": 852,
+      "sha256": "2734d24c063bf80f20926c2a2c0a8975ddc8c817f2c67cf87be2241f55f31074"
+    },
+    "artifacts/n6_f3_sensitivity.json": {
+      "bytes": 589,
+      "sha256": "747010d25c05625fda0c657ea33297b9bef269233afb0dd7052c02ed6649d4ee"
+    },
+    "artifacts/oos_predictions.csv": {
+      "bytes": 173659,
+      "sha256": "78cb65a23987c625856e9ecb68d1fa9b73cc7706236575bae69fb0c5a1fc7d3c"
+    },
+    "artifacts/oos_test.csv": {
+      "bytes": 48908,
+      "sha256": "e4ce0e75837cbdc42ddf3332b0264f06cea3560ec02a93fa8f344e0ab2b4c733"
+    },
+    "artifacts/oos_val.csv": {
+      "bytes": 123970,
+      "sha256": "673737446c5be2e6f4202652574728a8f014818b89f94bbce723a516851cc7d2"
+    },
+    "artifacts/reasoning_chains.json": {
+      "bytes": 4382582,
+      "sha256": "cbb7ae3ff3f76fa4c4a9dd526f344d064190cb95b5924bd495a4bfd303c73da0"
+    },
+    "artifacts/run_log.jsonl": {
+      "bytes": 1451,
+      "sha256": "938b7fefb594109bca8323531a716b5ab761192731ddbe6a04b225f8c9e9780a"
+    },
+    "artifacts/runtime_benchmark.json": {
+      "bytes": 732,
+      "sha256": "928f1b2d0813e08fae8da3758ac78d1baf868a93ceb724e993bd1e62a3fb8e51"
+    },
+    "artifacts/shap_importance.csv": {
+      "bytes": 312,
+      "sha256": "6bac39caef31242adb020c0890d5354ca475cbdc429ebbbaae23f7619839d4bc"
+    },
+    "artifacts/shap_values.csv": {
+      "bytes": 1250068,
+      "sha256": "54aad12369cf1f872e3bdd9e9500c89dbc00bcd422942b358d1aeb12f1a2fe16"
+    },
+    "artifacts/threshold_sensitivity.csv": {
+      "bytes": 957,
+      "sha256": "345e95d5229d32a87c5a6a2033fca6976c183228952e4678340787d3bc58b1cc"
+    },
+    "artifacts/threshold_sensitivity.json": {
+      "bytes": 4723,
+      "sha256": "8da784034bc02ce6ed99f7ed3e2ecdcca02c76e23fe2f8d9f14f9c0464033bbd"
+    },
+    "artifacts/wdi_sipri_check.json": {
+      "bytes": 16805,
+      "sha256": "20657be3fcddef3059706666931138dd5193f80383fc1460742d2465b569441c"
+    },
+    "artifacts/xgb_model.json": {
+      "bytes": 344340,
+      "sha256": "d28de7c00785ec3f6d1d27d678fc142d2505599c81a3cee18ccbd010378de45f"
+    },
+    "artifacts/xgb_params.json": {
+      "bytes": 473,
+      "sha256": "934bebc8234adbd4d77ec156f394bca53575c53fb891de43e5e3183dc6858671"
+    },
+    "data/features.csv": {
+      "bytes": 865786,
+      "sha256": "bd08e0c0dcb1e29a64ddb9be65ad07a6e7f8fe9b73baf9455318418dc98a01c8"
+    },
+    "data/panel.csv": {
+      "bytes": 1774890,
+      "sha256": "ea951c3cd101ac5870a21720b8c07a43589d28492e57a929670372bdb830263f"
+    },
+    "data/kalman_signals.csv": {
+      "bytes": 257724,
+      "sha256": "937d74696a9ac223f9aad10b39dd97c725c12c9864f31ec10404e848fc8de062"
+    },
+    "data/kalman_params.csv": {
+      "bytes": 17971,
+      "sha256": "d30cf7085ca2ca16ae6f929921bd46c71fc0b7ce5fb81e6a35a6c6cf785846b2"
+    }
+  }
+}

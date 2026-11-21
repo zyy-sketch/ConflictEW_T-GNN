@@ -1,0 +1,8 @@
+{
+  "n_obs": 7328,
+  "pooled_corr_e_star_inflation": 0.0456,
+  "within_country_corr_e_star_inflation": 0.0447,
+  "share_inflation_missing": 0.1384,
+  "interpretation": "若 |相关| 接近 0，说明 e* 并非主要由通胀率共同驱动；但军费为现价美元（未平减），故 e* 仍含价格水平共同趋势成分，应解释为'名义增速相对自身趋势的偏离'。",
+  "corr_F1_vs_F3_inflation": 0.0356
+}

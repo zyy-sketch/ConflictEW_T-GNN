@@ -226,12 +226,13 @@ def evaluate(features: pd.DataFrame, oos: pd.DataFrame, panel: pd.DataFrame,
             metrics["lead_time_at_suggested"] = lead_time_analysis(oos, panel, threshold=best_t)
 
     # ---- 基准对比（论文 Table III 规范实现，见 baselines.py）----
-    from .baselines import baseline_logistic_re, baseline_var, paired_bootstrap
+    from .baselines import baseline_logistic_re, baseline_persistence, baseline_var, paired_bootstrap
     bl_re = baseline_logistic_re(features, get_factor_columns())
     bl_var = baseline_var(features)
+    bl_naive = baseline_persistence(features, panel)
     metrics["baselines"] = {}
     diffs = []
-    for name, b in (("logistic_RE", bl_re), ("VAR2", bl_var)):
+    for name, b in (("logistic_RE", bl_re), ("VAR2", bl_var), ("persistence", bl_naive)):
         summary = {k: v for k, v in b.items() if k != "test_rows"}
         # 与主模型测试期逐行对齐 → 规范配对 bootstrap（Table III 同式）
         p_map = {(r["country"], r["year"]): r["p_conflict"] for r in b["test_rows"]}
