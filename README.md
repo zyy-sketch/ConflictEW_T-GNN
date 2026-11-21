@@ -4,6 +4,15 @@ Reproducible research pipeline for the manuscript *"Multi-Indicator Conflict Ear
 
 > **Honest-results statement.** This is a negative-result release on real data. With real UCDP conflict-onset labels (v25.1) and real WDI military-expenditure covariates, the multi-factor Kalman model reaches **AUC 0.545 (DeLong 95% CI [0.493, 0.597])** on strictly out-of-sample years (2015–2024, 61 onsets) — **not better than a rare-events logistic baseline (AUC 0.572, paired diff n.s. p=0.61)**, and the headline Kalman military-anomaly signal is *harmful*: removing it raises AUC to 0.680. The model only significantly outperforms the pooled VAR(2) baseline (AUC 0.448, p=0.018). We report these findings as-is; see the manuscript and `PROVENANCE.md`.
 
+## Methods overview
+
+1. **Signal extraction (F05)** — a local-linear-trend Kalman filter runs per country on log military expenditure (WDI `MS.MIL.XPND.CD`); the standardized one-step-ahead prediction residual e* (|e*| ≥ 2 = anomaly) is the military-anomaly signal. Hyperparameters are MLE per country over the full 1970–2024 series — a **disclosed exception** to the ≤t−1 rule, quantified by the sensitivity analysis (pooled r = 0.926; train-window-only end-to-end refit: AUC 0.6464, see `scripts/15`).
+2. **Multi-factor features (F06)** — six pre-registered risk factors (F1 anomaly e*, F2 arms-race, F3 macro stress, F4 political instability, F5 territorial claims, F6 alliance change), all covariates lagged to ≤t−1; F5/F6/V-Dem degrade to zero (disclosed) leaving 9 active columns.
+3. **Labels (F04)** — y = 1 iff a *new* conflict onset (UCDP v25.1) starts within the next 12 months; ongoing conflict years are not positive.
+4. **Model (F07)** — XGBoost (300 rounds, depth 3, lr 0.05, auto scale-pos-weight) with blocked expanding-window CV on 1990–2014 (4 folds × 660 country-years), then one-shot evaluation on the held-out 2015–2024 window (1,650 country-years, 61 onsets); isotonic recalibration fitted on validation folds only.
+5. **Benchmarks & inference** — rare-events logistic (King–Zeng class weighting) and pooled VAR(2) baselines plus a naive persistence control; DeLong AUC CIs, paired 1,000-resample bootstrap with BH-FDR (α = 0.05), Wilson intervals, parametric Brier bootstrap; τ/budget sensitivity sweep and a train-window-refit end-to-end variant.
+6. **Audit layer** — SHAP attribution with a local-accuracy check (|φ₀+Σφⱼ − logit p| tolerance test), look-ahead leakage suite (L1–L5), SHA-256 provenance registry, and a two-run determinism check.
+
 ## What is inside
 
 | Path | Content |
@@ -41,7 +50,8 @@ Reproducible research pipeline for the manuscript *"Multi-Indicator Conflict Ear
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements.lock                      # exact environment (Python 3.13)
 python scripts/run_all.py                             # load → features → train → eval → figures
-python -m pytest -q                                   # 33 tests incl. golden regressions
+python scripts/run_all.py --extended                  # + sensitivity, τ sweep, refit, figures, MANIFEST
+python -m pytest -q                                   # 34 tests incl. golden regressions
 python scripts/06_repro_check.py                      # two-run determinism check
 ```
 

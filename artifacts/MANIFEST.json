@@ -10,7 +10,7 @@
     },
     "artifacts/alerts.json": {
       "bytes": 133,
-      "sha256": "c8944399a6ede488f55c851569f69eb865b3699406638b098c50fbde9bc67570"
+      "sha256": "02c4f981dc099eba47156a8c9f8f0ca37e27fc615d3215c914f915977d23634f"
     },
     "artifacts/calibration_reliability.json": {
       "bytes": 4838,
@@ -62,11 +62,11 @@
     },
     "artifacts/reasoning_chains.json": {
       "bytes": 4382582,
-      "sha256": "cbb7ae3ff3f76fa4c4a9dd526f344d064190cb95b5924bd495a4bfd303c73da0"
+      "sha256": "7ccbdae92685da24fe05e3331245902b59aa535cfad69260c3b201ac66803bc5"
     },
     "artifacts/run_log.jsonl": {
-      "bytes": 1451,
-      "sha256": "938b7fefb594109bca8323531a716b5ab761192731ddbe6a04b225f8c9e9780a"
+      "bytes": 6853,
+      "sha256": "d4a69112b394d42ec4ca5f8b47ce722dd33cba9f4556b3a5c905941ae1ca52b3"
     },
     "artifacts/runtime_benchmark.json": {
       "bytes": 732,

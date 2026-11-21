@@ -65,15 +65,39 @@ ax.set_title("ROC — held-out 2015–2024 (n = 1,650, 61 onsets)")
 ax.legend(loc="lower right", fontsize=8)
 _save(fig, "fig1_roc")
 
-# ---- fig2: 可靠性图（KF+MF raw 8-bin + isotonic 校准后）----
+# ---- fig2: 可靠性图（KF+MF raw 8-bin + Wilson 95% CI + isotonic 校准后）----
+from scipy.stats import norm  # noqa: E402
+
+_z = norm.ppf(0.975)
+
+
+def _wilson_ci(n: int, p_hat: float) -> tuple[float, float]:
+    """二项比例的 Wilson 95% 置信区间（小样本 bin 的诚实不确定度）。"""
+    if n == 0:
+        return float("nan"), float("nan")
+    denom = 1 + _z**2 / n
+    center = (p_hat + _z**2 / (2 * n)) / denom
+    half = _z * np.sqrt(p_hat * (1 - p_hat) / n + _z**2 / (4 * n**2)) / denom
+    return max(center - half, 0.0), min(center + half, 1.0)
+
+
 cal = json.loads((ART / "calibration_reliability.json").read_text(encoding="utf-8"))["models"]["KF+MF"]
 raw_bins = [b for b in cal["raw"]["bins"] if b["n"] > 0]
 fig, ax = plt.subplots(figsize=(4.2, 3.8))
 ax.plot([0, 1], [0, 1], "--", color="grey", lw=1, label="perfect calibration")
-ax.errorbar([b["pred"] for b in raw_bins], [b["obs"] for b in raw_bins],
-            fmt="o", color="#c0392b", ms=6, capsize=3, label="raw score (8 equal-width bins)")
-ax.scatter([0.0], [cal["isotonic_calibrated"]["obs_rate"]], marker="s", color="#2c7fb8", s=42,
-           label="after isotonic recalibration")
+for b in raw_bins:
+    ci_lo, ci_hi = _wilson_ci(b["n"], b["obs"])
+    ax.errorbar(b["pred"], b["obs"], yerr=[[b["obs"] - ci_lo], [ci_hi - b["obs"]]],
+                fmt="o", color="#c0392b", ms=6, capsize=3,
+                label="raw score (8 equal-width bins, Wilson 95% CI)" if b is raw_bins[0] else None)
+    ax.annotate(f"n={b['n']}", (b["pred"], b["obs"]), textcoords="offset points",
+                xytext=(8, 4), fontsize=7, color="#555555")
+cal_bins = [b for b in cal["isotonic_calibrated"]["bins"] if b["n"] > 0]
+for j, b in enumerate(cal_bins):
+    ci_lo, ci_hi = _wilson_ci(b["n"], b["obs"])
+    ax.errorbar(b["pred"], b["obs"], yerr=[[b["obs"] - ci_lo], [ci_hi - b["obs"]]],
+                fmt="s", color="#2c7fb8", ms=6, capsize=3,
+                label="after isotonic recalibration" if j == 0 else None)
 ax.set_xlim(-0.03, 1.0)
 ax.set_ylim(-0.03, 1.0)
 ax.set_xlabel("Mean predicted conflict probability")
