@@ -67,6 +67,9 @@ All pipeline stages (F01–F18) run inside `run_all.py` (see `src/conflict_ew/pi
 
 Python 3.13; key versions pinned in `requirements.lock` (xgboost 3.4.1, scikit-learn 1.9.0, numpy 2.5.2, pandas 3.0.5) and matching the manuscript's reproducibility statement.
 
+- **No API keys or environment variables are required.** Everything runs offline from the committed WDI snapshot (`data/raw_real.json`) and tracked official raw files.
+- **Windows consoles with a Chinese locale (GBK)**: set `PYTHONUTF8=1` (e.g. `$env:PYTHONUTF8='1'` in PowerShell) before running scripts or `pip install -r requirements.lock` — some outputs are Unicode and the GBK codec cannot encode them.
+
 ## Citation
 
 See `CITATION.cff`. A Zenodo DOI will be minted for the submission release tag.

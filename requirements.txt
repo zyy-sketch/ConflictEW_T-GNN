@@ -1,5 +1,6 @@
-# ConflictEW 依赖（Python 3.13；与论文 Reproducibility 声明一致）
-# 精确锁定版本见 requirements.lock（pip freeze）；本文件只列直接依赖与下限
+# ConflictEW dependencies (Python 3.13; matches the manuscript reproducibility statement)
+# Exact pinned versions: requirements.lock (pip freeze). This file lists direct deps with lower bounds only.
+# Keep this file ASCII-only: non-ASCII comments break `pip install` on Windows consoles with a GBK locale.
 numpy>=2.5
 pandas>=3.0
 scipy>=1.14
@@ -9,6 +10,6 @@ shap>=0.48
 matplotlib>=3.10
 PyYAML>=6.0
 requests>=2.31
-xlrd>=2.0.1       # Polity5 .xls 原件解析（scripts/fetch_external.py）
-openpyxl>=3.1     # SIPRI 2025 .xlsx 原件解析（scripts/fetch_external.py、verify_wdi_sipri.py）
+xlrd>=2.0.1       # Polity5 .xls raw-file parsing (scripts/fetch_external.py)
+openpyxl>=3.1     # SIPRI 2025 .xlsx parsing (scripts/fetch_external.py, verify_wdi_sipri.py)
 pytest>=8.0
