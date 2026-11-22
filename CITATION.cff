@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or the reproduced results, please cite it as below."
-title: "An Auditable Three-Layer Pipeline for Multi-Indicator Geopolitical Risk Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"
+title: "An Auditable Three-Layer Pipeline for Armed-Conflict Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"
 version: v2.0.0-realdata
 date-released: "2026-11-21"
 license: MIT
