@@ -114,3 +114,18 @@ python scripts/verify_wdi_sipri.py
 3. TABLE IV / Data Availability：军费措辞按 §2（决策 A）；数据来源逐项指向本文件与 `data/external/provenance.json`。
 4. ISO3 映射：论文改口 "mapping available in code repository"（决策 B）→ 指向 `data/external_real/countries.csv`。
 5. 结论/摘要必须按新叙事重写：真实标签下"军费异常信号无增量预警价值"的负结果 + 简单稀有事件 logit 占优。
+
+
+## Third-party data notices
+
+Data files in `data/` retain their original providers' terms and require
+separate citation:
+
+- World Bank WDI indicators: CC BY 4.0, (c) World Bank.
+- SIPRI Military Expenditure Database: CC BY 4.0, (c) SIPRI.
+- Polity5: Center for Systemic Peace; free for research use.
+  Cite: Marshall, M. G., & Gurr, T. R. (2020). *Polity5: Political Regime
+  Characteristics and Transitions, 1800-2018*. Center for Systemic Peace.
+- Correlates of War project data (Intra-State Wars v5.1, Direct Contiguity
+  v3.2): cite the COW project and the respective codebooks.
+- V-Dem (if downloaded): cite the V-Dem Institute dataset per its license.

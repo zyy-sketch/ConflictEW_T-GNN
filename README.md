@@ -1,4 +1,8 @@
-# An Auditable Three-Layer Pipeline for Multi-Indicator Geopolitical Risk Early Warning
+# An Auditable Three-Layer Pipeline for Armed-Conflict Early Warning
+
+[![CI](https://github.com/zyy-sketch/ConflictEW_T-GNN/actions/workflows/ci.yml/badge.svg)](https://github.com/zyy-sketch/ConflictEW_T-GNN/actions/workflows/ci.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.24436076-blue)](https://doi.org/10.5281/zenodo.24436076)
+![Python](https://img.shields.io/badge/Python-3.13-blue)
 
 Reproducible research pipeline for the manuscript *"An Auditable Three-Layer Pipeline for Armed-Conflict Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"* — data ingestion → Kalman local-linear-trend signal extraction → multi-factor features → XGBoost with blocked temporal cross-validation → baseline comparisons → uncertainty quantification.
 
