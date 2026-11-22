@@ -1,8 +1,8 @@
 {
-  "version": "v4-unified-2026-11-02",
-  "generated_at": "2026-11-21",
+  "version": "v2.0.0-realdata",
+  "generated_at": "2026-11-22",
   "note": "对每个发布文件登记 size 与 SHA-256；用于核验发布工件与记录运行产物一致。",
-  "n_files": 40,
+  "n_files": 58,
   "files": {
     "artifacts/alert_history.json": {
       "bytes": 268371,
@@ -10,11 +10,31 @@
     },
     "artifacts/alerts.json": {
       "bytes": 133,
-      "sha256": "12070bf06913e48dc83b6b86c5ed1ee5209f7e4b87f62671eaa9f9bac1c82628"
+      "sha256": "3c235039d18ded8ac4dc7aa43f93b91fc17346b259857a14cc362266decf0c84"
+    },
+    "artifacts/annotation/chain_packet.md": {
+      "bytes": 38804,
+      "sha256": "6d88c781f501af8d12ec09cff06c92a776a8f4f4a7aa97c99098580f858703cc"
+    },
+    "artifacts/annotation/kappa_gold_map.json": {
+      "bytes": 3853,
+      "sha256": "d89ae3f1ec0215c9291306c59844e68a4c0d42195ff23ad6b7cd73c22a4261cc"
     },
     "artifacts/calibration_reliability.json": {
       "bytes": 5527,
       "sha256": "d94989ea7bce3060586600a0ba90ea89509bcd00c32e076b97481251130498f0"
+    },
+    "artifacts/country_code_map.csv": {
+      "bytes": 379,
+      "sha256": "bde91c2d8433858a459f18ce18cfc6987696e3f357c05d03b8087d9731a6845f"
+    },
+    "artifacts/event_study.json": {
+      "bytes": 1225,
+      "sha256": "585250693c633a27b9f18a6a9ae7bbf57e8a1be5453fe3e57f4dcc7a8080bbca"
+    },
+    "artifacts/event_study_aligned.csv": {
+      "bytes": 19617,
+      "sha256": "2b464e9e00b659bfbd8c3797fd017e146fcbd31db285bac188fffab2f0bad756"
     },
     "artifacts/factor_registry.json": {
       "bytes": 1063,
@@ -60,6 +80,54 @@
       "bytes": 125748,
       "sha256": "8c406dd64d1fc60c7fe5e2021acc29bb25663730b88c1a6d78c1413cbee7902f"
     },
+    "artifacts/figures/fig5_trajectories.pdf": {
+      "bytes": 18616,
+      "sha256": "07fefd03980c71efa2376eef4e9d90e6d8ce1088a63c388fdbb7ef052fd7bf22"
+    },
+    "artifacts/figures/fig5_trajectories.png": {
+      "bytes": 126049,
+      "sha256": "4d57ddce2b3deb666f1bf0c4c94ef1245ecbaec904f25d1eb9a5ffca0cd1e058"
+    },
+    "artifacts/figures/fig_event_study.pdf": {
+      "bytes": 16717,
+      "sha256": "6ded828c0c7392ca6409079ef49fb079edcceb6fcf59cd3cbe86dab3002f4b1a"
+    },
+    "artifacts/figures/fig_event_study.png": {
+      "bytes": 29718,
+      "sha256": "299dbd2c84c43ce994842869cbcb7066f19baf5ed57362e3d417d3de9b477239"
+    },
+    "artifacts/figures/fig_paper2a_milex.pdf": {
+      "bytes": 17179,
+      "sha256": "cca51330c8f5e28d40e73974e73660214ec95d2dd4073db3b21723bd723f71e6"
+    },
+    "artifacts/figures/fig_paper2a_milex.png": {
+      "bytes": 94447,
+      "sha256": "d28f036c5d7d5733d15b6d190d3587a4c1f654200709783445d85d1ab82a98b2"
+    },
+    "artifacts/figures/fig_paper2b_residual.pdf": {
+      "bytes": 15091,
+      "sha256": "c787c9e05491c5ac4a180dc0d003d4e543f32e0e52beb064cfa781ce304d5818"
+    },
+    "artifacts/figures/fig_paper2b_residual.png": {
+      "bytes": 123136,
+      "sha256": "2d8447ed7d41100f59e6da4122928e473d3fa677f3d1ee0b5658125617c5e2ef"
+    },
+    "artifacts/figures/fig_shap_distribution.pdf": {
+      "bytes": 14425,
+      "sha256": "3bebb3a6ce31edb672423c47e70fc7fad9e4a95c2234ada35bf39aefc1f7a51d"
+    },
+    "artifacts/figures/fig_shap_distribution.png": {
+      "bytes": 36289,
+      "sha256": "b53e5808e515ceac5bb8b26b185e794983197aec03da484fe931cec0ff2771f4"
+    },
+    "artifacts/figures/fig_shap_importance.pdf": {
+      "bytes": 13009,
+      "sha256": "b032b85a4f5bf36186ef38df9ea0db96648b1e0e1e7dfaa91585851fd20f2c8f"
+    },
+    "artifacts/figures/fig_shap_importance.png": {
+      "bytes": 31732,
+      "sha256": "b5688e49d1563ec8dab735dd0dd898f85bbf787e803559f97124652b0200894b"
+    },
     "artifacts/m2_per_country_comparison.csv": {
       "bytes": 5563,
       "sha256": "6b1b71ad2d132009f7e42124ce8c7c4b5f4b4f94a5ff654b6326b2be37a995d6"
@@ -77,8 +145,8 @@
       "sha256": "6117973e44368f0ad3fb4491cf7853613364aaf0e5122a599d75649cc67105ab"
     },
     "artifacts/metrics.json": {
-      "bytes": 6877,
-      "sha256": "8277c4e7cecc3ce0faa6cdae4b453cfcee16b65c039d03386dac418fc1a652a4"
+      "bytes": 6886,
+      "sha256": "33de4423c9b98ced7822640e11753a576f4b5ffacf1fbea51bfe277efb02da40"
     },
     "artifacts/n4_bootstrap_ci.json": {
       "bytes": 852,
@@ -102,11 +170,11 @@
     },
     "artifacts/reasoning_chains.json": {
       "bytes": 4382582,
-      "sha256": "070db085d0674f4335eff34243314050af86aef7e72fb8b1c5133a8cb7f19b3a"
+      "sha256": "f0dd36f28488279b56c578c1f73d81edc7b2aeaf227f52f91ceda9a8f5c08b51"
     },
     "artifacts/run_log.jsonl": {
-      "bytes": 6853,
-      "sha256": "340d454c371712b69732bbef9d9dc62d6b67aea99ff8524702a07aa8a7a3c0d4"
+      "bytes": 6862,
+      "sha256": "b8f156d3a141beda6674fe246739bcf890c5d7f507bf3ef91a6df1fbb3b3d89c"
     },
     "artifacts/runtime_benchmark.json": {
       "bytes": 732,
@@ -157,12 +225,16 @@
       "sha256": "d30cf7085ca2ca16ae6f929921bd46c71fc0b7ce5fb81e6a35a6c6cf785846b2"
     },
     "docs/protocol_kappa.md": {
-      "bytes": 2028,
-      "sha256": "f76f9fcfc701f177d67f9d5f1c722596d66b4d32fa060740b214b91920106cbe"
+      "bytes": 2305,
+      "sha256": "5df068cc4fa58740d9555041e8cb72d0c4e4f700b384ca3fd9b8cb25a2715bec"
     },
-    "data/annotation_sheet.csv": {
-      "bytes": 201,
-      "sha256": "a071708fac952023acb6eb6966f46b7ef504480b7d882c80013114135fd9ecc1"
+    "data/annotation_sheet_A.csv": {
+      "bytes": 1188,
+      "sha256": "b5e5b403761783fc2b1fa7dda3ea1ee19bd6aaeb565122e514a68a8031c94cab"
+    },
+    "data/annotation_sheet_B.csv": {
+      "bytes": 1188,
+      "sha256": "b52927d2046e0937433d49208b25412ad81d7ad9c72dd697761b633104b6c8ae"
     }
   }
 }

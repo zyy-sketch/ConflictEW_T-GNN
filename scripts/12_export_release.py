@@ -58,12 +58,12 @@ def main() -> None:
     files = sorted(p for p in art.rglob("*") if p.is_file())
     extra = [get_path(k) for k in ("features_file", "panel_file", "kalman_signals_file",
                                    "kalman_params_file") if get_path(k).exists()]
-    # 论文 Data Availability 声明随包发布的 κ 协议与人工标注表
+    # 论文 Data Availability 声明随包发布的 κ 协议与两份人工标注表
     kappa_protocol = ROOT / "docs" / "protocol_kappa.md"
-    annotation_sheet = ROOT / "data" / "annotation_sheet.csv"
-    for p in (kappa_protocol, annotation_sheet):
-        if p.exists():
-            extra.append(p)
+    annotation_sheets = [ROOT / "data" / "annotation_sheet_A.csv",
+                         ROOT / "data" / "annotation_sheet_B.csv"]
+    for p in [kappa_protocol] + [s for s in annotation_sheets if s.exists()]:
+        extra.append(p)
     entries = {}
     for p in list(files) + extra:
         if p.name == "MANIFEST.json" or p.is_dir():

@@ -1,8 +1,9 @@
 """汇总人工标注结果，计算 Cohen's κ（维度级 + 汇总），对照 0.7 部署门槛。
 
 只做标注聚合，不含任何打分/模拟逻辑——标注值必须来自人工填写。
-用法：python scripts/summarize_kappa.py --sheet data/annotation_sheet.csv
-表格式见 docs/protocol_kappa.md 与 data/annotation_sheet.csv 表头。
+用法：python scripts/summarize_kappa.py --sheet <合并后的标注表（A+B 两份拼接，含 annotator 列）>
+表格式见 docs/protocol_kappa.md；样本由 scripts/18_draw_kappa_sample.py 生成
+（data/annotation_sheet_A.csv / _B.csv，填完后纵向拼接传入）。
 """
 from __future__ import annotations
 

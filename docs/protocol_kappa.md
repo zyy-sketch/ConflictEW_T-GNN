@@ -3,7 +3,7 @@
 > Status: **prospective specification**. No annotation was performed for the paper and
 > no κ value is reported. All κ-related statements in the manuscript (§III-C) are
 > design commitments, not measured results. This document, the blank annotation
-> sheet (`data/annotation_sheet.csv`) and the aggregation script
+> sheet (`data/annotation_sheet_A.csv` / `_B.csv`) and the aggregation script
 > (`scripts/summarize_kappa.py`) are released so that independent raters can run
 > the study on the released reasoning chains.
 
@@ -25,11 +25,14 @@
 
 ## How to run the study
 
-1. Draw the 50-chain holdout with `scripts`-level stratification on the gold
-   label; record chain IDs in `data/annotation_sheet.csv` (one row per
-   chain × annotator).
-2. Each annotator fills `pass`/`fail` in the three dimension columns.
-3. Aggregate: `python scripts/summarize_kappa.py --sheet data/annotation_sheet.csv`
+1. Draw the 50-chain holdout: `python scripts/18_draw_kappa_sample.py`
+   (stratified 25/25 on the gold label; generates the two annotator sheets and
+   the blinded reading packet `artifacts/annotation/chain_packet.md`).
+2. Each annotator independently reads the packet and fills `pass`/`fail` in the
+   three dimension columns of their own sheet (`_A.csv` / `_B.csv`) — the two
+   annotators must not discuss the chains until both sheets are complete.
+3. Aggregate: concat the two sheets (or pass them merged) —
+   `python scripts/summarize_kappa.py --sheet data/annotation_sheet.csv`
    → prints per-dimension κ, pooled κ, and pass/fail against the 0.7 gate.
 
 The script contains **no scoring logic** — it only aggregates human labels.
