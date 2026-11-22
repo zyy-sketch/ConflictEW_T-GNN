@@ -2,6 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software or the reproduced results, please cite it as below."
 title: "An Auditable Three-Layer Pipeline for Armed-Conflict Early Warning: Kalman Signal Extraction, Rare-Event Scoring and Grounded Reasoning"
 version: v2.0.0-realdata
+doi: 10.5281/zenodo.24436076
 date-released: "2026-11-21"
 license: MIT
 repository-code: "https://github.com/zyy-sketch/ConflictEW_T-GNN"
