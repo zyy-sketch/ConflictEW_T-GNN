@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from conflict_ew.baselines import baseline_logistic_re, baseline_var  # noqa: E402
+from conflict_ew.build_panel import load_base_panel  # noqa: E402
 from conflict_ew.factors import get_factor_columns  # noqa: E402
 from conflict_ew.paths import get_path  # noqa: E402
 
@@ -54,7 +55,7 @@ iso_kf.fit(val["p_conflict"], val["y"])
 # ---- 三模型测试分 ----
 y_kf = test["y"].to_numpy()
 p_kf = test["p_conflict"].to_numpy()
-panel_df = pd.read_csv(get_path("panel_file"))
+panel_df = load_base_panel()
 bl_lr = baseline_logistic_re(feats, get_factor_columns(), panel_df)
 bl_va = baseline_var(feats, panel_df)
 y_lr = np.array([lab[(r["country"], r["year"])] for r in bl_lr["test_rows"]])

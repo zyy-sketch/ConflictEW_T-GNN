@@ -38,6 +38,22 @@ class PanelAudit:
                 "issues": self.issues, "passed": self.passed}
 
 
+PANEL_BASE_COLS = ("iso3", "year", "mil_expense", "mil_expense_log", "mil_expense_interpolated",
+                   "gdp_growth", "inflation", "unemployment", "polity_score", "vdem_ldi",
+                   "icow_claim", "atop_change", "onset", "active", "y_onset")
+
+
+def load_base_panel() -> pd.DataFrame:
+    """读取 panel.csv 并只返回基础列。
+
+    磁盘上的 panel.csv 是 pipeline.finalize_panel 的富集快照（额外含 e_star/is_anomaly
+    与 F1-F6 列）。下游脚本如需基础面板，一律经本函数读取，避免与 signals 合并时的
+    同名列冲突（e_star → e_star_x/y）。
+    """
+    df = pd.read_csv(get_path("panel_file"))
+    return df[[c for c in PANEL_BASE_COLS if c in df.columns]]
+
+
 def build_labels(df: pd.DataFrame, lookahead_months: int = 12) -> pd.DataFrame:
     """按 COW 口径构建 y 标签。
 

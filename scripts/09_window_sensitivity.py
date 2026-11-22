@@ -24,13 +24,14 @@ warnings.filterwarnings("ignore")
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from conflict_ew.build_panel import load_base_panel  # noqa: E402
 from conflict_ew.kalman import _build_grid, _fit_single, _kalman_filter  # noqa: E402
 from conflict_ew.paths import get_path  # noqa: E402
 
 OUT = ROOT / "artifacts"
 OUT.mkdir(exist_ok=True)
 
-panel = pd.read_csv(get_path("panel_file"))
+panel = load_base_panel()
 sig_full = pd.read_csv(get_path("kalman_signals_file"))
 params_full = pd.read_csv(get_path("kalman_params_file"))
 

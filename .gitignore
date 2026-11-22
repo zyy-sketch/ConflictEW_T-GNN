@@ -21,6 +21,9 @@ artifacts/*
 !artifacts/metrics.json
 !artifacts/n4_bootstrap_ci.json
 !artifacts/n6_f3_sensitivity.json
+!artifacts/event_study.json
+!artifacts/event_study_aligned.csv
+!artifacts/country_code_map.csv
 !artifacts/oos_predictions.csv
 !artifacts/oos_test.csv
 !artifacts/oos_val.csv

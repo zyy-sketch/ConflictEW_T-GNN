@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from conflict_ew.baselines import baseline_var  # noqa: E402
+from conflict_ew.build_panel import load_base_panel  # noqa: E402
 from conflict_ew.factors import get_factor_columns  # noqa: E402
 from conflict_ew.paths import cfg, get_path  # noqa: E402
 
@@ -33,7 +34,7 @@ OUT.mkdir(exist_ok=True)
 cv = cfg()["model"]["cv"]
 TS, TE, CS = cv["test_start"], cv["test_end"], cv["cv_start"]
 feats = pd.read_csv(get_path("features_file")).reset_index(drop=True)
-panel = pd.read_csv(get_path("panel_file"))
+panel = load_base_panel()
 oos = pd.read_csv(get_path("oos_file"))
 fc = get_factor_columns()
 

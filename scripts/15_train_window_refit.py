@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from conflict_ew.baselines import delong_ci  # noqa: E402
+from conflict_ew.build_panel import load_base_panel  # noqa: E402
 from conflict_ew.external import ingest_external  # noqa: E402
 from conflict_ew.factors import build_features  # noqa: E402
 from conflict_ew.kalman import _build_grid, _fit_single, _kalman_filter  # noqa: E402
@@ -29,11 +30,7 @@ from conflict_ew.xgb import train_and_predict  # noqa: E402
 OUT = ROOT / "artifacts"
 OUT.mkdir(exist_ok=True)
 
-panel = pd.read_csv(get_path("panel_file"))
-# 磁盘上的 panel.csv 含 e_star/F* 合并列，会与 signals 合并冲突——只取 build_features
-# 实际消费的基础列（与管道内存中 build_panel 的输出对齐）
-panel = panel[["iso3", "year", "mil_expense_log", "gdp_growth", "inflation", "unemployment",
-               "polity_score", "vdem_ldi", "icow_claim", "atop_change", "y_onset"]]
+panel = load_base_panel()
 sig_full = pd.read_csv(get_path("kalman_signals_file"))
 
 # ---- 1) 训练窗(<=2014) MLE 估参 + 冻结前推（与 09_window_sensitivity.py 同式）----

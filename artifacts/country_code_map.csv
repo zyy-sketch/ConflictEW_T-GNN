@@ -1,0 +1,7 @@
+code,iso3,role,detail
+C1,CZE,Fig.2 representative major spender,panel start 1991 (fallback=True)
+T1,SOM,Fig.5 trajectory rank,"rank 1, mean raw 0.1391"
+T2,YEM,Fig.5 trajectory rank,"rank 2, mean raw 0.1182"
+T3,IRN,Fig.5 trajectory rank,"rank 3, mean raw 0.1051"
+T4,TUR,Fig.5 trajectory rank,"rank 4, mean raw 0.1034"
+T5,NER,Fig.5 trajectory rank,"rank 5, mean raw 0.0724"

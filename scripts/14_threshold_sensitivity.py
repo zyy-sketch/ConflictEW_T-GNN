@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from conflict_ew.baselines import fbeta_confusion  # noqa: E402
+from conflict_ew.build_panel import load_base_panel  # noqa: E402
 from conflict_ew.metrics import lead_time_analysis  # noqa: E402
 from conflict_ew.paths import get_path  # noqa: E402
 
@@ -28,7 +29,7 @@ BUDGETS = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5]
 
 oos = pd.read_csv(get_path("oos_file"))
 feats = pd.read_csv(get_path("features_file"))
-panel = pd.read_csv(get_path("panel_file"))
+panel = load_base_panel()
 y_map = {(r["iso3"], int(r["year"])): int(r["y_onset"]) for _, r in feats.iterrows()}
 
 

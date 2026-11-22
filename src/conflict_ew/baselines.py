@@ -24,8 +24,9 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 
+from .build_panel import load_base_panel
 from .metrics import lead_time_analysis
-from .paths import cfg, get_path
+from .paths import cfg
 
 _TAU_GRID = np.arange(0.005, 0.999, 0.005)  # 规范分位网格
 
@@ -104,7 +105,7 @@ def partial_auc(y: np.ndarray, p: np.ndarray, max_fpr: float = 0.1) -> float:
 
 # ---------------------------------------------------------------- 公共数据
 def _panel_growth() -> pd.DataFrame:
-    panel = pd.read_csv(get_path("panel_file"))
+    panel = load_base_panel()
     p2 = panel[["iso3", "year", "mil_expense_log", "gdp_growth"]].sort_values(
         ["iso3", "year"]).copy()
     p2["mil_growth"] = p2.groupby("iso3")["mil_expense_log"].diff()

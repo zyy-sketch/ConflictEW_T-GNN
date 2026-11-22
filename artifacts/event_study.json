@@ -1,0 +1,66 @@
+{
+  "definition": "每个发生过至少一次 onset 的国家取首次 onset 年 t0；e* 按 delta=t−t0 对齐，跨事件取均值与标准误（sem=std(ddof=1)/sqrt(n)）。",
+  "n_events": 83,
+  "n_countries_in_panel": 165,
+  "window": [
+    -5,
+    3
+  ],
+  "lags": [
+    {
+      "delta": -5,
+      "mean": 0.1217,
+      "sem": 0.1002,
+      "n": 58
+    },
+    {
+      "delta": -4,
+      "mean": 0.1652,
+      "sem": 0.1197,
+      "n": 61
+    },
+    {
+      "delta": -3,
+      "mean": 0.0413,
+      "sem": 0.1211,
+      "n": 65
+    },
+    {
+      "delta": -2,
+      "mean": 0.1014,
+      "sem": 0.1031,
+      "n": 69
+    },
+    {
+      "delta": -1,
+      "mean": 0.111,
+      "sem": 0.0906,
+      "n": 80
+    },
+    {
+      "delta": 0,
+      "mean": 0.3747,
+      "sem": 0.1062,
+      "n": 83
+    },
+    {
+      "delta": 1,
+      "mean": 0.2695,
+      "sem": 0.1263,
+      "n": 83
+    },
+    {
+      "delta": 2,
+      "mean": 0.3957,
+      "sem": 0.1606,
+      "n": 83
+    },
+    {
+      "delta": 3,
+      "mean": 0.2214,
+      "sem": 0.1291,
+      "n": 83
+    }
+  ],
+  "note": "对应论文 Fig. 2c（event-study alignment of mean e* ± s.e.m.）。"
+}
