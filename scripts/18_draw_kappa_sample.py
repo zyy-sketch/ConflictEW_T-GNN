@@ -71,9 +71,7 @@ for n, (idx, c, g) in enumerate(draw, start=1):
         packet += ["", f"结论: {concl}"]
     packet += ["", f"源数据行: {src_row or '（缺失）'}", "", "---", ""]
 
-header = [ln for ln in header_path.read_text(encoding="utf-8").splitlines()]
-(OUT / "chain_packet.md").write_text(
-    "\n".join(header + packet), encoding="utf-8")
+(OUT / "chain_packet.md").write_text("\n".join(packet), encoding="utf-8")
 
 gold_map = {f"CH{n:03d}": {"country": c["country"], "year": int(c["year"]), "gold": g}
             for n, (_, c, g) in enumerate(draw, start=1)}
