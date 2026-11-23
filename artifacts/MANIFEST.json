@@ -1,6 +1,6 @@
 {
   "version": "v2.0.0-realdata",
-  "generated_at": "2026-11-22",
+  "generated_at": "2026-11-23",
   "note": "对每个发布文件登记 size 与 SHA-256；用于核验发布工件与记录运行产物一致。",
   "n_files": 58,
   "files": {
@@ -10,11 +10,11 @@
     },
     "artifacts/alerts.json": {
       "bytes": 133,
-      "sha256": "3c235039d18ded8ac4dc7aa43f93b91fc17346b259857a14cc362266decf0c84"
+      "sha256": "ae651ada326bda5a247207370837d8525921dbc510716cb308086a3ec4b89535"
     },
     "artifacts/annotation/chain_packet.md": {
-      "bytes": 38804,
-      "sha256": "6d88c781f501af8d12ec09cff06c92a776a8f4f4a7aa97c99098580f858703cc"
+      "bytes": 47485,
+      "sha256": "c712b7f9686007e4672ba9a104430669e665cbcf4dabaca3ced79bb9c3183f02"
     },
     "artifacts/annotation/kappa_gold_map.json": {
       "bytes": 3853,
@@ -170,11 +170,11 @@
     },
     "artifacts/reasoning_chains.json": {
       "bytes": 4382582,
-      "sha256": "f0dd36f28488279b56c578c1f73d81edc7b2aeaf227f52f91ceda9a8f5c08b51"
+      "sha256": "d550ca3897eb38ac8e36f787298b504ccf1afb86d9d041eb292d56bb9c6ae7c1"
     },
     "artifacts/run_log.jsonl": {
       "bytes": 6862,
-      "sha256": "b8f156d3a141beda6674fe246739bcf890c5d7f507bf3ef91a6df1fbb3b3d89c"
+      "sha256": "3baf14b0e52c54d261122563a434f06f2472c4817e1550a97efacb0d5739234b"
     },
     "artifacts/runtime_benchmark.json": {
       "bytes": 732,

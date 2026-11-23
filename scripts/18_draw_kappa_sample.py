@@ -1,4 +1,4 @@
-﻿"""κ 标注样本抽取（协议见 docs/protocol_kappa.md）。
+"""κ 标注样本抽取（协议见 docs/protocol_kappa.md）。
 
 分层抽取 50 条测试窗推理链（金标签 25 阳/25 阴，seed 20240101），打乱顺序
 防止从排列推断金标签。输出两份标注表（A/B 各 50 行）+ 标注者阅读包 +
@@ -45,11 +45,12 @@ rng.shuffle(draw)
 
 # ---- PART3 ----
 sample = []
-packet = ["# κ 标注阅读包（50 条推理链，顺序已打乱）", "",
-          "对每条链独立判断三个维度并填 pass/fail 至标注表：",
-          "① factual_accuracy（事实准确：陈述是否与源数据行一致）",
-          "② logical_coherence（逻辑连贯：因子→结论的推理是否成立）",
-          "③ actionability（可操作性：输出对决策者是否有可用信息）", ""]
+header_path = ROOT / "docs" / "annotation_packet_header.md"
+n_pos = sum(1 for *_, g in draw if g == 1)
+packet = header_path.read_text(encoding="utf-8").splitlines()
+packet += ["", f"本包生成: scripts/18_draw_kappa_sample.py (seed {SEED}) | "
+           f"样本 50 链（金标签阳/阴 = {n_pos}/{len(draw) - n_pos}，顺序已打乱）", ""]
+
 for n, (idx, c, g) in enumerate(draw, start=1):
     cid = f"CH{n:03d}"
     country, year = c["country"], int(c["year"])
@@ -70,20 +71,14 @@ for n, (idx, c, g) in enumerate(draw, start=1):
         packet += ["", f"结论: {concl}"]
     packet += ["", f"源数据行: {src_row or '（缺失）'}", "", "---", ""]
 
-# ---- PART4 ----
-header = ["chain_id", "country", "year", "annotator",
-          "factual_accuracy", "logical_coherence", "actionability", "notes"]
-for annotator, fname in (("A", "annotation_sheet_A.csv"), ("B", "annotation_sheet_B.csv")):
-    rows = [dict(chain_id=s["chain_id"], country=s["country"], year=s["year"],
-                 annotator=annotator, factual_accuracy="", logical_coherence="",
-                 actionability="", notes="") for s in sample]
-    pd.DataFrame(rows, columns=header).to_csv(ROOT / "data" / fname, index=False)
+header = [ln for ln in header_path.read_text(encoding="utf-8").splitlines()]
+(OUT / "chain_packet.md").write_text(
+    "\n".join(header + packet), encoding="utf-8")
 
 gold_map = {f"CH{n:03d}": {"country": c["country"], "year": int(c["year"]), "gold": g}
             for n, (_, c, g) in enumerate(draw, start=1)}
 (OUT / "kappa_gold_map.json").write_text(json.dumps(gold_map, ensure_ascii=False, indent=2),
                                          encoding="utf-8")
-(OUT / "chain_packet.md").write_text("\n".join(packet), encoding="utf-8")
-n_pos = sum(g for *_, g in draw)
-print(f"DONE: 抽取 {len(draw)} 链（阳/阴 = {n_pos}/{len(draw) - n_pos}），"
+n_pos_final = sum(g for *_, g in draw)
+print(f"DONE: 抽取 {len(draw)} 链（阳/阴 = {n_pos_final}/{len(draw) - n_pos_final}），"
       f"sheet_A/B 各 {len(draw)} 行 + chain_packet.md + kappa_gold_map.json")
