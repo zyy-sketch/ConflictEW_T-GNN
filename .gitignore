@@ -81,3 +81,4 @@ reports/
 # kappa annotation reading packet is public (for the second annotator); kappa_gold_map.json stays local (blinding)
 !artifacts/annotation/
 !artifacts/annotation/chain_packet.md
+artifacts/annotation/kappa_gold_map.json
