@@ -32,7 +32,7 @@
    three dimension columns of their own sheet (`_A.csv` / `_B.csv`) — the two
    annotators must not discuss the chains until both sheets are complete.
 3. Aggregate: concat the two sheets (or pass them merged) —
-   `python scripts/summarize_kappa.py --sheet data/annotation_sheet.csv`
+   `python scripts/summarize_kappa.py --sheet data/annotation_sheet_merged.csv`
    → prints per-dimension κ, pooled κ, and pass/fail against the 0.7 gate.
 
 The script contains **no scoring logic** — it only aggregates human labels.
